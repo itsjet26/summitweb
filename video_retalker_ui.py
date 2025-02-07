@@ -20,7 +20,7 @@ def process_video(audio_file, face_file):
 
     # Command to run Video-Retalker (adjust as needed)
     command = [
-        "python", os.path.join(VIDEO_RETALKER_PATH, "infer.py"),
+        "python", os.path.join(VIDEO_RETALKER_PATH, "inference.py"),
         "--face", face_file,
         "--audio", audio_file,
         "--output", output_video
