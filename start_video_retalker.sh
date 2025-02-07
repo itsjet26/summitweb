@@ -1,6 +1,6 @@
 #!/bin/bash
-cd /workspace/video-retalking
 conda activate video_retalking
+cd video-retalking
 
 python video_retalker_ui.py 2>&1 | tee video_retalker_ui.log &
 
