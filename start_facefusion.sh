@@ -5,11 +5,11 @@ source ~/miniconda/etc/profile.d/conda.sh
 conda activate facefusion
 
 cd facefusion
-python -u facefusion.py run 2>&1 | tee facefusion_url.log &
+python -u facefusion.py run 2>&1 | tee facefusion.log &
 
 sleep 60
 
-GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' facefusion_url.log | tail -1)
+GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' facefusion.log | tail -1)
 
 if [[ -n "$GRADIO_URL" ]]; then
     echo "$GRADIO_URL" > facefusion_url.txt
