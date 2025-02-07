@@ -4,7 +4,7 @@
 source ~/miniconda/etc/profile.d/conda.sh
 conda activate video_retalking
 
-cd /workspace/video-retalking
+cd video-retalking
 python video_retalker_ui.py 2>&1 | tee /workspace/video_retalker_ui.log &
 
 sleep 60
