@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd facefusion
 conda activate facefusion
 
 python -u facefusion.py run 2>&1 | tee facefusion.log &
