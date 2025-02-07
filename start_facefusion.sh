@@ -17,5 +17,3 @@ if [[ -n "$GRADIO_URL" ]]; then
 else
     echo "Failed to get FaceFusion Gradio URL. Falling back to localhost." > /workspace/facefusion_url.txt
 fi
-
-wait
