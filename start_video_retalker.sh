@@ -4,11 +4,9 @@
 source ~/miniconda/etc/profile.d/conda.sh
 conda activate video_retalking
 
-cd /workspace/video-retalking
-
 # Start the Web UI
 echo "🚀 Starting Video-Retalker Web UI..."
-python -u video_retalker_ui.py 2>&1 | tee /workspace/video_retalker_ui.log &
+python -u "/summitweb/video_retalker_ui.py" 2>&1 | tee /workspace/video_retalker_ui.log &
 
 sleep 10  # Allow Gradio to initialize
 
