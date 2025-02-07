@@ -1,8 +1,6 @@
 #!/bin/bash
-
-cd /workspace/facefusion
 conda activate facefusion
-
+cd facefusion
 python -u facefusion.py run 2>&1 | tee facefusion.log &
 
 sleep 60
