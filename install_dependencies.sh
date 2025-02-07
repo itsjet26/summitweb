@@ -25,6 +25,7 @@ echo "export PATH=/usr/local/cuda/bin:\$PATH" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH" >> ~/.bashrc
 source ~/.bashrc
 
+cd /workspace
 conda create --name facefusion python=3.12 -y
 conda activate facefusion
 git clone https://github.com/facefusion/facefusion.git
@@ -36,6 +37,7 @@ python install.py --onnxruntime cuda
 sed -i "s/ui.launch(favicon_path/ui.launch(show_api=False, share=True, favicon_path/" facefusion/uis/layouts/default.py
 conda deactivate
 
+cd /workspace
 conda create -n video_retalking python=3.8 -y
 conda activate video_retalking
 git clone https://github.com/vinthony/video-retalking.git
