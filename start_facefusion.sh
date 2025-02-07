@@ -4,7 +4,7 @@
 source ~/miniconda/etc/profile.d/conda.sh
 conda activate facefusion
 
-cd facefusion
+cd /workspace/facefusion
 python -u facefusion.py run 2>&1 | tee facefusion.log &
 
 sleep 60
