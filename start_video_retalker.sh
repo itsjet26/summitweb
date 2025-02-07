@@ -23,5 +23,3 @@ if [[ -n "$GRADIO_URL" ]]; then
 else
     echo "❌ Failed to get Video-Retalker Gradio URL. Falling back to localhost." > /summitweb/video_retalker_url.txt
 fi
-
-wait
