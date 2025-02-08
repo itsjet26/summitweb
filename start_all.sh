@@ -42,13 +42,13 @@ pip install --upgrade gradio
 
 # Start the Web UI in a fully detached background process
 echo "🚀 Starting Video-Retalker Web UI..."
-nohup python -u "/workspace/video-retalking/video_retalker_ui.py" > /workspace/video_retalker_ui.log 2>&1 & disown
+nohup python -u "/summitweb/video_retalker_ui.py" > /workspace/video_retalker_ui.log 2>&1 & disown
 
 # Wait for Gradio URL (retry for 60 seconds)
 timeout=60
 while [[ $timeout -gt 0 ]]; do
     sleep 5
-    GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/facefusion.log | tail -1)
+    GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/video_retalker_ui.log | tail -1)
     
     if [[ -n "$GRADIO_URL" ]]; then
         echo "$GRADIO_URL" > /workspace/video_retalker_url.txt
@@ -78,7 +78,7 @@ echo "✅ RVC is running on http://localhost:7897"
 # ========================
 # 📊 Start Web Dashboard
 # ========================
-cd /workspace/summitweb
+cd /summitweb
 
 # Ensure Flask is installed
 pip install flask
