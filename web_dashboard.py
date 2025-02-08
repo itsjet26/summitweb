@@ -9,6 +9,11 @@ def get_facefusion_url():
 def get_video_retalker_url():
     return read_url_from_file("/workspace/video_retalker_url.txt", "http://localhost:5001")
 
+def get_rvc_url():
+    return read_url_from_file("/workspace/rvc_url.txt", "http://localhost:7897")
+
+
+
 def read_url_from_file(file_path, fallback_url):
     """ Read the URL from the file and return it, else return a fallback URL """
     for _ in range(10):
@@ -25,7 +30,7 @@ def home():
     programs = {
         "FaceFusion": get_facefusion_url(),
         "Video-Retalker": get_video_retalker_url(),
-        "RVC (Voice Conversion)": "http://localhost:7897",
+        "RVC (Voice Conversion)": get_rvc_url(),
     }
     
     buttons = "".join([f'<a href="{url}" target="_blank"><button>{name}</button></a><br>' for name, url in programs.items()])
