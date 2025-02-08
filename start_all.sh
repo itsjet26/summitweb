@@ -37,6 +37,11 @@ fi
 conda activate video_retalking
 cd /workspace/video-retalking
 
+export TORCH_CUDA_ARCH_LIST="8.6+PTX"
+
+# Fix missing dependencies
+pip install --upgrade torch torchvision basicsr
+
 # Ensure Gradio is installed
 pip install --upgrade gradio
 
