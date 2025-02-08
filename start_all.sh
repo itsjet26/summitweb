@@ -35,6 +35,8 @@ fi
 # 🗣️ Start Video-Retalker
 # ========================
 conda activate video_retalking
+export TORCH_CUDA_ARCH_LIST="8.9+PTX"
+export CUDA_HOME=/usr/local/cuda
 cd /workspace/video-retalking
 
 
