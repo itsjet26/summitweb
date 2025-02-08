@@ -49,7 +49,7 @@ mkdir ./checkpoints
 wget -O ./checkpoints/30_net_gen.pth https://github.com/vinthony/video-retalking/releases/download/v0.0.1/30_net_gen.pth
 wget -O ./checkpoints/BFM.zip https://github.com/vinthony/video-retalking/releases/download/v0.0.1/BFM.zip
 unzip -d ./checkpoints/BFM ./checkpoints/BFM.zip
-sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" video-retalking/webUI.py
+sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
 conda deactivate
 
 echo "✅ Installation Complete! Now run 'install_rvc.sh' before starting programs."
