@@ -10,7 +10,7 @@ def get_video_retalker_url():
     return read_url_from_file("/workspace/video_retalker_url.txt", "http://localhost:5001")
 
 def get_rvc_url():
-    return read_url_from_file("/workspace/rvc_url.txt", "http://localhost:7897")
+    return read_url_from_file("/workspace/rvc_url.txt", "http://localhost:7865")
 
 
 
