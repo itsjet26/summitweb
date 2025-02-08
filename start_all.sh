@@ -81,7 +81,7 @@ chmod +x run.sh
 nohup ./run.sh > /workspace/rvc.log 2>&1 & disown
 
 # Wait a few seconds for the process to initialize
-sleep 20
+sleep 90
 
 # Check for the Gradio URL in logs
 GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/rvc.log | tail -1)
