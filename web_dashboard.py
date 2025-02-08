@@ -6,7 +6,7 @@ def get_facefusion_url():
     return read_url_from_file("/workspace/facefusion_url.txt", "http://localhost:7860")
 
 def get_video_retalker_url():
-    return read_url_from_file("/workspaace/video_retalker_url.txt", "http://localhost:5001")
+    return read_url_from_file("/workspace/video_retalker_url.txt", "http://localhost:5001")
 
 def read_url_from_file(file_path, fallback_url):
     """ Read the URL from the file and return it, else return a fallback URL """
