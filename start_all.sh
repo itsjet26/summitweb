@@ -65,15 +65,30 @@ fi
 # ========================
 # 🎤 Start RVC
 # ========================
-chmod +x /workspace/RVC1006Nvidia/runtime/python.exe
+#!/bin/bash
+
+# Navigate to the RVC folder
 cd /workspace/RVC1006Nvidia
 
-# Run RVC Web UI
-echo "🚀 Starting RVC..."
-nohup /workspace/RVC1006Nvidia/runtime/python.exe infer-web.py --pycmd /workspace/RVC1006Nvidia/runtime/python.exe --port 7897 > /workspace/rvc.log 2>&1 & disown
+# Ensure the script is executable
+chmod +x run.sh
 
+# Run the script in the background and log output
+nohup ./run.sh > /workspace/rvc.log 2>&1 & disown
+
+# Wait a few seconds for the process to initialize
 sleep 20
-echo "✅ RVC is running on http://localhost:7897"
+
+# Check for the Gradio URL in logs
+GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/rvc.log | tail -1)
+
+if [[ -n "$GRADIO_URL" ]]; then
+    echo "$GRADIO_URL" > /workspace/rvc_url.txt
+    echo "✅ RVC Public URL: $GRADIO_URL"
+else
+    echo "❌ Failed to get RVC Gradio URL. Falling back to localhost." > /workspace/rvc_url.txt
+fi
+
 
 # ========================
 # 📊 Start Web Dashboard
