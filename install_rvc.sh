@@ -3,7 +3,7 @@
 cd /workspace
 
 wget -O RVC1006Nvidia.7z "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/RVC1006Nvidia.7z"
-7z x RVC1006Nvidia.7z
+7z x -mmt=on RVC1006Nvidia.7z
 rm RVC1006Nvidia.7z
 
 cd /workspace/RVC1006Nvidia
