@@ -43,11 +43,13 @@ conda activate video_retalking
 git clone https://github.com/vinthony/video-retalking.git
 cd video-retalking
 conda install -y ffmpeg
+pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
 mkdir ./checkpoints
 wget -O ./checkpoints/30_net_gen.pth https://github.com/vinthony/video-retalking/releases/download/v0.0.1/30_net_gen.pth
 wget -O ./checkpoints/BFM.zip https://github.com/vinthony/video-retalking/releases/download/v0.0.1/BFM.zip
 unzip -d ./checkpoints/BFM ./checkpoints/BFM.zip
+sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" video-retalking/webUI.py
 conda deactivate
 
 echo "✅ Installation Complete! Now run 'install_rvc.sh' before starting programs."
