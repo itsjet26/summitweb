@@ -72,6 +72,8 @@ fi
 # Navigate to the RVC folder
 cd /workspace/RVC1006Nvidia
 
+apt update && apt install -y aria2
+chmod +x ./tools/*.sh
 # Ensure the script is executable
 chmod +x run.sh
 
