@@ -37,17 +37,11 @@ fi
 conda activate video_retalking
 cd /workspace/video-retalking
 
-export TORCH_CUDA_ARCH_LIST="8.6+PTX"
-
-# Fix missing dependencies
-pip install --upgrade torch torchvision basicsr
-
-# Ensure Gradio is installed
-pip install --upgrade gradio
 
 # Start the Web UI in a fully detached background process
 echo "🚀 Starting Video-Retalker Web UI..."
-nohup python -u "/summitweb/video_retalker_ui.py" > /workspace/video_retalker_ui.log 2>&1 & disown
+
+nohup python -u /workspace/video-retalking/webUI.py > /workspace/video_retalker_ui.log 2>&1 & disown
 
 # Wait for Gradio URL (retry for 60 seconds)
 timeout=60
@@ -71,6 +65,7 @@ fi
 # ========================
 # 🎤 Start RVC
 # ========================
+chmod +x /workspace/RVC1006Nvidia/runtime/python.exe
 cd /workspace/RVC1006Nvidia
 
 # Run RVC Web UI
