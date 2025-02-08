@@ -59,7 +59,7 @@ if [[ -z "$GRADIO_URL" ]]; then
     echo "❌ Failed to get Video-Retalker Gradio URL. Falling back to localhost." > /workspace/video_retalker_url.txt
 fi
 
-cd /workspace/RVC
+cd /workspace/RVC1006Nvidia
 runtime/python.exe infer-web.py --pycmd runtime/python.exe --port 7897 &
 sleep 20
 
