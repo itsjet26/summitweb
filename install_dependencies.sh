@@ -45,11 +45,22 @@ cd video-retalking
 conda install -y ffmpeg
 pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu124
 pip install -r requirements.txt
-mkdir ./checkpoints
-wget -O ./checkpoints/30_net_gen.pth https://github.com/vinthony/video-retalking/releases/download/v0.0.1/30_net_gen.pth
-wget -O ./checkpoints/BFM.zip https://github.com/vinthony/video-retalking/releases/download/v0.0.1/BFM.zip
-unzip -d ./checkpoints/BFM ./checkpoints/BFM.zip
+pip install gdown
+mkdir -p ./checkpoints
+GDRIVE_FOLDER_ID="18rhjMpxK8LVVxf7PI6XwOidt8Vouv_H0"
+echo "📥 Downloading checkpoints from Google Drive..."
+gdown --folder "https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID" -O ./checkpoints
+
+if [[ "$(ls -A ./checkpoints)" ]]; then
+    echo "✅ All required checkpoint files have been downloaded successfully."
+else
+    echo "❌ Failed to download checkpoint files. Please check your Google Drive link or permissions."
+    exit 1
+fi
+
 sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
+sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" /root/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
+
 conda deactivate
 
 echo "✅ Installation Complete! Now run 'install_rvc.sh' before starting programs."
