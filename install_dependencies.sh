@@ -18,14 +18,8 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
-# Add NVIDIA's CUDA repository for CUDA 11.8
-wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-keyring_1.0-1_all.deb
-sudo dpkg -i cuda-keyring_1.0-1_all.deb
-
-apt update
 apt install -y cuda-toolkit-11-8
 apt install -y libcudnn8-cuda-11 libcudnn8-dev-cuda-11
-
 
 echo "export PATH=/usr/local/cuda/bin:\$PATH" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH" >> ~/.bashrc
