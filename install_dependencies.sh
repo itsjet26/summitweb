@@ -42,6 +42,7 @@ conda create -n video_retalking python=3.8 -y
 conda activate video_retalking
 pip install torch==2.5.1 torchvision==0.20.1 torchaudio==2.5.1 --index-url https://download.pytorch.org/whl/cu118
 git clone https://github.com/vinthony/video-retalking.git
+cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
 cd video-retalking
 conda install -y ffmpeg
 pip install -r requirements.txt
