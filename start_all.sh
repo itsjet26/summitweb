@@ -72,24 +72,6 @@ fi
 # Navigate to the RVC folder
 cd /workspace/RVC1006Nvidia
 
-sed -i 's/i18n("单次推理")/"Single Inference"/g' infer-web.py
-sed -i 's/i18n("伴奏人声分离&去混响&去回声")/"Vocal Separation & De-reverb & Echo Removal"/g' infer-web.py
-sed -i 's/i18n("训练")/"Training"/g' infer-web.py
-sed -i 's/i18n("ckpt处理")/"Checkpoint Processing"/g' infer-web.py
-sed -i 's/i18n("Onnx导出")/"ONNX Export"/g' infer-web.py
-sed -i 's/i18n("常见问题解答")/"FAQ"/g' infer-web.py
-sed -i 's/i18n("输入待处理音频文件路径(默认是正确格式示例)")/"Upload Audio File"/g' infer-web.py
-sed -i 's/i18n("输入人脸图像路径")/"Upload Face Image"/g' infer-web.py
-sed -i 's/i18n("输出文件路径")/"Download Processed File"/g' infer-web.py
-sed -i 's/i18n("刷新音色列表和索引路径")/"Refresh Speaker List and Index Paths"/g' infer-web.py
-sed -i 's/i18n("卸载音色省显存")/"Unload Speaker to Save Memory"/g' infer-web.py
-sed -i 's/i18n("请选择说话人id")/"Select Speaker ID"/g' infer-web.py
-sed -i 's/i18n("转换")/"Convert"/g' infer-web.py
-sed -i 's/i18n("输出信息")/"Output Info"/g' infer-web.py
-sed -i 's/i18n("批量推理")/"Batch Inference"/g' infer-web.py
-sed -i 's/i18n("模型推理")/"Model Inference"/g' infer-web.py
-sed -i '/else:/,/quiet=True,/s|.*app\.queue(.*|        app.queue(concurrency_count=511, max_size=1022).launch(share=True)|' infer-web.py
-
 
 apt update && apt install -y aria2
 chmod +x ./tools/*.sh
