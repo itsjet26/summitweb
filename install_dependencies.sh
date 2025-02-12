@@ -18,8 +18,6 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
-apt install -y cuda-toolkit-12-4
-apt install -y libcudnn9-cuda-12 libcudnn9-dev-cuda-12
 
 echo "export PATH=/usr/local/cuda/bin:\$PATH" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=/usr/local/cuda/lib64:\$LD_LIBRARY_PATH" >> ~/.bashrc
