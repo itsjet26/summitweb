@@ -26,7 +26,7 @@ def convert(video, audio):
     output_file = f"results/output_{random.randint(0, 1000)}.mp4"
 
     # Process the video with the provided audio
-    command = ["python3", "inference.py", "--face", video_path,
+    command = ["python", "inference.py", "--face", video_path,
                "--audio", audio_path, "--outfile", output_file]
     env = os.environ.copy()
     env["CUDA_VISIBLE_DEVICES"] = "0"  # Specify GPU
