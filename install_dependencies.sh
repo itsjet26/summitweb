@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e  # Exit on error
+set -e  # Exit script if any command fails
 set -o pipefail  # Fail pipeline if any command fails
 
 echo "🚀 Updating and installing dependencies..."
@@ -24,24 +24,27 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
+echo "🧹 Removing any existing CUDA versions..."
+apt remove --purge '^cuda.*' '^nvidia.*' '^libcudnn.*' -y || true
+apt autoremove -y
+rm -rf /usr/local/cuda*
+
 echo "⚡ Installing CUDA 12.1 and cuDNN 8.9..."
 wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run
-sudo sh cuda_12.1.0_530.30.02_linux.run --silent --toolkit
-export PATH=/usr/local/cuda-12.1/bin:$PATH
-export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64:$LD_LIBRARY_PATH
+sh cuda_12.1.0_530.30.02_linux.run --silent --toolkit
 
-echo "📥 Installing cuDNN 8.9..."
 wget https://developer.download.nvidia.com/compute/cudnn/8.9.2/local_installers/cudnn-linux-x86_64-8.9.2.26_cuda12-archive.tar.xz
 tar -xvf cudnn-linux-x86_64-8.9.2.26_cuda12-archive.tar.xz
-sudo cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/include/* /usr/local/cuda/include/
-sudo cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/lib/* /usr/local/cuda/lib64/
-sudo chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
+cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/include/* /usr/local/cuda/include/
+cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/lib/* /usr/local/cuda/lib64/
+chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
 
+echo "✅ CUDA 12.1 and cuDNN 8.9 installed successfully!"
+
+echo "🛠️ Setting CUDA environment variables..."
 echo "export PATH=/usr/local/cuda-12.1/bin:\$PATH" >> ~/.bashrc
 echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64:\$LD_LIBRARY_PATH" >> ~/.bashrc
 source ~/.bashrc
-
-echo "✅ CUDA 12.1 and cuDNN 8.9 installed successfully!"
 
 cd /workspace
 
