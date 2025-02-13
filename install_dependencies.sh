@@ -45,7 +45,7 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.8 -y
+conda create -n video_retalking python=3.11 -y
 conda activate video_retalking
 conda install conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
