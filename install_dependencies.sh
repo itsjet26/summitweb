@@ -24,33 +24,15 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
-echo "🧹 Removing any existing CUDA versions..."
-apt remove --purge '^cuda.*' '^nvidia.*' '^libcudnn.*' -y || true
-apt autoremove -y
-rm -rf /usr/local/cuda*
-
-echo "⚡ Installing CUDA 12.1 and cuDNN 8.9..."
-wget https://developer.download.nvidia.com/compute/cuda/12.1.0/local_installers/cuda_12.1.0_530.30.02_linux.run
-sh cuda_12.1.0_530.30.02_linux.run --silent --toolkit
-
-wget https://developer.download.nvidia.com/compute/cudnn/8.9.2/local_installers/cudnn-linux-x86_64-8.9.2.26_cuda12-archive.tar.xz
-tar -xvf cudnn-linux-x86_64-8.9.2.26_cuda12-archive.tar.xz
-cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/include/* /usr/local/cuda/include/
-cp cudnn-linux-x86_64-8.9.2.26_cuda12-archive/lib/* /usr/local/cuda/lib64/
-chmod a+r /usr/local/cuda/include/cudnn*.h /usr/local/cuda/lib64/libcudnn*
-
-echo "✅ CUDA 12.1 and cuDNN 8.9 installed successfully!"
-
-echo "🛠️ Setting CUDA environment variables..."
-echo "export PATH=/usr/local/cuda-12.1/bin:\$PATH" >> ~/.bashrc
-echo "export LD_LIBRARY_PATH=/usr/local/cuda-12.1/lib64:\$LD_LIBRARY_PATH" >> ~/.bashrc
-source ~/.bashrc
+echo "🛠️ Setting up Conda environments..."
 
 cd /workspace
 
 echo "🐍 Creating Conda environment for FaceFusion..."
-conda create --name facefusion python=3.11 -y
-source activate facefusion
+conda create --name facefusion python=3.12 -y
+conda activate facefusion
+conda install conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/facefusion/facefusion.git
 cd facefusion
 pip install --upgrade pip
@@ -63,9 +45,10 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.11 -y
-source activate video_retalking
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+conda create -n video_retalking python=3.8 -y
+conda activate video_retalking
+conda install conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/vinthony/video-retalking.git
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
 cd video-retalking
