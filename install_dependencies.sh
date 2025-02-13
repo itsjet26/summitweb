@@ -24,8 +24,6 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
-echo "🛠️ Installing CUDA & cuDNN Once in Base Conda Environment..."
-conda install -n base conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 
 echo "🛠️ Setting up Conda environments..."
 
@@ -34,6 +32,7 @@ cd /workspace
 echo "🐍 Creating Conda environment for FaceFusion..."
 conda create --name facefusion python=3.12 -y
 conda activate facefusion
+conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/facefusion/facefusion.git
 cd facefusion
@@ -47,11 +46,11 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.11 -y
+conda create -n video_retalking python=3.8 -y
 conda activate video_retalking
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+conda install -n video_retalking conda-forge::cuda-runtime=11.8.89 conda-forge::cudnn=8.9.2 -y
+pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
 git clone https://github.com/vinthony/video-retalking.git
-cp /summitweb/requirements.txt /workspace/video-retalking/requirements.txt
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
 cd video-retalking
 conda install -y ffmpeg
@@ -73,7 +72,7 @@ else
 fi
 
 sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
-sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.11/site-packages/basicsr/data/degradations.py
+sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
 
 conda deactivate
 
