@@ -47,13 +47,15 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.9 -y
+conda create -n video_retalking python=3.11 -y
 conda activate video_retalking
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/vinthony/video-retalking.git
+cp /summitweb/requirements.txt /workspace/video-retalking/requirements.txt
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
 cd video-retalking
 conda install -y ffmpeg
+conda install -c conda-forge dlib
 pip install -r requirements.txt
 pip install gdown
 
