@@ -24,6 +24,9 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
+echo "🛠️ Installing CUDA & cuDNN Once in Base Conda Environment..."
+conda install -n base conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
+
 echo "🛠️ Setting up Conda environments..."
 
 cd /workspace
@@ -31,8 +34,7 @@ cd /workspace
 echo "🐍 Creating Conda environment for FaceFusion..."
 conda create --name facefusion python=3.12 -y
 conda activate facefusion
-conda install conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/facefusion/facefusion.git
 cd facefusion
 pip install --upgrade pip
@@ -45,9 +47,8 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.11 -y
+conda create -n video_retalking python=3.9 -y
 conda activate video_retalking
-conda install conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/vinthony/video-retalking.git
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
