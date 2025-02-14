@@ -35,8 +35,6 @@ fi
 # 🗣️ Start Video-Retalker
 # ========================
 conda activate video_retalking
-export TORCH_CUDA_ARCH_LIST="$(python -c 'import torch; print(torch.cuda.get_arch_list()[-1])')"
-export CUDA_HOME=/usr/local/cuda
 cd /workspace/video-retalking
 
 
