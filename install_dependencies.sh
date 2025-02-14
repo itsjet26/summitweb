@@ -89,7 +89,7 @@ mkdir build && cd build
 
 # 5️⃣ Configure CMake with CUDA for RTX 4090 (`sm_90`)
 cmake -D CMAKE_BUILD_TYPE=RELEASE \
-      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D CMAKE_INSTALL_PREFIX=$HOME/miniconda/envs/video_retalking \
       -D WITH_CUDA=ON \
       -D CUDA_ARCH_BIN="90" \
       -D WITH_CUDNN=ON \
@@ -99,6 +99,7 @@ cmake -D CMAKE_BUILD_TYPE=RELEASE \
       -D CUDA_FAST_MATH=1 \
       -D WITH_OPENGL=ON \
       -D OPENCV_GENERATE_PKGCONFIG=ON ..
+
 
 # 6️⃣ Compile OpenCV with CUDA (this step takes time)
 make -j$(nproc)
