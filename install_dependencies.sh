@@ -48,7 +48,6 @@ cd /workspace
 echo "🎥 Creating Conda environment for Video-Retalking..."
 conda create -n video_retalking python=3.8 -y
 conda activate video_retalking
-conda install -n video_retalking conda-forge::cuda-runtime=11.8.89 conda-forge::cudnn=8.9.2 -y
 pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
 git clone https://github.com/vinthony/video-retalking.git
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
