@@ -56,9 +56,7 @@ conda install -y ffmpeg
 conda install -c conda-forge dlib
 pip install -r requirements.txt
 pip install gdown
-conda remove --force opencv -y
-pip uninstall opencv-python opencv-python-headless opencv-contrib-python -y
-conda install -c conda-forge opencv cudatoolkit=11.8 -y
+
 mkdir -p ./checkpoints
 GDRIVE_FOLDER_ID="18rhjMpxK8LVVxf7PI6XwOidt8Vouv_H0"
 
@@ -71,6 +69,44 @@ else
     echo "❌ Failed to download checkpoint files. Please check your Google Drive link or permissions."
     exit 1
 fi
+
+# 1️⃣ Remove any existing OpenCV installations (Conda & Pip)
+conda remove --force opencv -y
+pip uninstall opencv-python opencv-python-headless opencv-contrib-python -y
+
+# 2️⃣ Install required dependencies
+apt update
+apt install -y build-essential cmake git pkg-config libgtk-3-dev \
+               libjpeg-dev libpng-dev libtiff-dev libavcodec-dev \
+               libavformat-dev libswscale-dev libv4l-dev ffmpeg libcanberra-gtk3-module
+
+# 3️⃣ Clone OpenCV source code
+git clone https://github.com/opencv/opencv.git
+git clone https://github.com/opencv/opencv_contrib.git
+
+# 4️⃣ Create build directory
+cd opencv
+mkdir build && cd build
+
+# 5️⃣ Configure CMake with CUDA for RTX 4090 (`sm_90`)
+cmake -D CMAKE_BUILD_TYPE=RELEASE \
+      -D CMAKE_INSTALL_PREFIX=/usr/local \
+      -D WITH_CUDA=ON \
+      -D CUDA_ARCH_BIN="90" \
+      -D WITH_CUDNN=ON \
+      -D OPENCV_EXTRA_MODULES_PATH=../../opencv_contrib/modules \
+      -D WITH_TBB=ON \
+      -D ENABLE_FAST_MATH=1 \
+      -D CUDA_FAST_MATH=1 \
+      -D WITH_OPENGL=ON \
+      -D OPENCV_GENERATE_PKGCONFIG=ON ..
+
+# 6️⃣ Compile OpenCV with CUDA (this step takes time)
+make -j$(nproc)
+
+# 7️⃣ Install OpenCV
+make install
+
 
 sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
 
