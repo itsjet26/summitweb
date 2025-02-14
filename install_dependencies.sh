@@ -72,7 +72,6 @@ else
     exit 1
 fi
 
-sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
 sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
 
 conda deactivate
