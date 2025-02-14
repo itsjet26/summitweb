@@ -56,7 +56,9 @@ conda install -y ffmpeg
 conda install -c conda-forge dlib
 pip install -r requirements.txt
 pip install gdown
-
+conda remove --force opencv -y
+pip uninstall opencv-python opencv-python-headless opencv-contrib-python -y
+conda install -c conda-forge opencv cudatoolkit=11.8 -y
 mkdir -p ./checkpoints
 GDRIVE_FOLDER_ID="18rhjMpxK8LVVxf7PI6XwOidt8Vouv_H0"
 
