@@ -30,7 +30,7 @@ echo "🛠️ Setting up Conda environments..."
 cd /workspace
 
 echo "🐍 Creating Conda environment for FaceFusion..."
-conda create --name facefusion python=3.12 -y
+conda create --name facefusion python=3.9 -y
 conda activate facefusion
 conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
@@ -72,7 +72,7 @@ else
 fi
 
 sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
-sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.11/site-packages/basicsr/data/degradations.py
+sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.9/site-packages/basicsr/data/degradations.py
 
 conda deactivate
 
