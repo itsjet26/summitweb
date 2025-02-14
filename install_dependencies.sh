@@ -70,9 +70,8 @@ else
     exit 1
 fi
 
-# 1️⃣ Remove any existing OpenCV installations (Conda & Pip)
-conda remove --force opencv -y
-pip uninstall opencv-python opencv-python-headless opencv-contrib-python -y
+
+pip uninstall opencv-python -y
 
 # 2️⃣ Install required dependencies
 apt update
