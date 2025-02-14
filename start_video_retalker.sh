@@ -1,4 +1,29 @@
 #!/bin/bash
+
+set -e  # Exit script if any command fails
+set -o pipefail  # Fail pipeline if any command fails
+
+echo "🚀 Updating and installing dependencies..."
+apt update
+apt install -y git-all curl ffmpeg wget openssh-server p7zip-full cmake build-essential python3-opencv
+
+echo "🔑 Setting up SSH access..."
+mkdir -p ~/.ssh
+chmod 700 ~/.ssh
+echo "$PUBLIC_KEY" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+service ssh start
+
+echo "📥 Installing Miniconda..."
+curl -LO https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+bash Miniconda3-latest-Linux-x86_64.sh -b -p $HOME/miniconda
+rm Miniconda3-latest-Linux-x86_64.sh
+
+export PATH="$HOME/miniconda/bin:$PATH"
+source $HOME/miniconda/etc/profile.d/conda.sh
+conda init
+source ~/.bashrc
+
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
