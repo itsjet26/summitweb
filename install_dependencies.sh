@@ -71,7 +71,7 @@ else
 fi
 
 
-pip uninstall opencv-python -y
+pip uninstall opencv-python opencv-python-headless opencv-contrib-python -y
 
 # 2️⃣ Install required dependencies
 apt update
