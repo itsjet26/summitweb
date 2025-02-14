@@ -46,9 +46,10 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.8 -y
+conda create -n video_retalking python=3.11 -y
 conda activate video_retalking
-pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
+pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/vinthony/video-retalking.git
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
 cd video-retalking
@@ -71,7 +72,7 @@ else
 fi
 
 sed -i "s/demo.queue().launch()/demo.queue().launch(share=True)/" webUI.py
-sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
+sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.11/site-packages/basicsr/data/degradations.py
 
 conda deactivate
 
