@@ -30,7 +30,7 @@ echo "🛠️ Setting up Conda environments..."
 cd /workspace
 
 echo "🐍 Creating Conda environment for FaceFusion..."
-conda create --name facefusion python=3.9 -y
+conda create --name facefusion python=3.12 -y
 conda activate facefusion
 conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
@@ -46,9 +46,9 @@ conda deactivate
 cd /workspace
 
 echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.11 -y
+conda create -n video_retalking python=3.9 -y
 conda activate video_retalking
-conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
+conda install -n video_retalking conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 git clone https://github.com/vinthony/video-retalking.git
 cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
