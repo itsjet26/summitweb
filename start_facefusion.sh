@@ -2,8 +2,9 @@
 
 # Ensure Conda is initialized
 source ~/miniconda/etc/profile.d/conda.sh
-conda activate facefusion
 
+echo "🚀 Starting FaceFusion..."
+conda activate facefusion
 cd /workspace/facefusion
 
 # Start FaceFusion in a fully detached background process
@@ -24,7 +25,8 @@ while [[ $timeout -gt 0 ]]; do
     ((timeout-=5))
 done
 
-# If no URL was found, fallback to localhost
 if [[ -z "$GRADIO_URL" ]]; then
-    echo "Failed to get FaceFusion Gradio URL. Falling back to localhost." > /workspace/facefusion_url.txt
+    echo "❌ Failed to get FaceFusion Gradio URL. Falling back to localhost." > /workspace/facefusion_url.txt
 fi
+
+echo "✅ FaceFusion is running successfully!"
