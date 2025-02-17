@@ -24,6 +24,10 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
+echo "🛠️ Setting up Conda environments..."
+
+cd /workspace
+
 echo "🐍 Creating Conda environment for FaceFusion..."
 conda create --name facefusion python=3.12 -y
 conda activate facefusion
@@ -34,13 +38,8 @@ cd facefusion
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install onnxruntime-gpu
-
-echo "🎭 Installing FaceFusion dependencies..."
 python install.py --onnxruntime cuda
-
-# Modify FaceFusion to enable public URL
 sed -i "s/ui.launch(favicon_path/ui.launch(show_api=False, share=True, favicon_path/" facefusion/uis/layouts/default.py
-
 conda deactivate
 
 echo "✅ FaceFusion Installation Complete!"
