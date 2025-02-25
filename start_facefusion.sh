@@ -11,7 +11,7 @@ cd /workspace/facefusion
 nohup python -u facefusion.py run > /workspace/facefusion.log 2>&1 & disown
 
 # Wait for Gradio URL (retry for 60 seconds)
-timeout=10
+timeout=60
 while [[ $timeout -gt 0 ]]; do
     sleep 5
     GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/facefusion.log | tail -1)
@@ -22,7 +22,7 @@ while [[ $timeout -gt 0 ]]; do
         break
     fi
     
-    ((timeout-=5))
+    ((timeout-=15))
 done
 
 if [[ -z "$GRADIO_URL" ]]; then
@@ -35,7 +35,7 @@ cd /workspace/vidgen
 nohup python -u generator.py > /workspace/vidgen.log 2>&1 & disown
 
 # Wait for Gradio URL (retry for 60 seconds)
-timeout=10
+timeout=60
 while [[ $timeout -gt 0 ]]; do
     sleep 5
     GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/vidgen.log | tail -1)
@@ -46,7 +46,7 @@ while [[ $timeout -gt 0 ]]; do
         break
     fi
     
-    ((timeout-=5))
+    ((timeout-=15))
 done
 
 if [[ -z "$GRADIO_URL" ]]; then
