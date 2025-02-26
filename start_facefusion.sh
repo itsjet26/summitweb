@@ -22,7 +22,7 @@ while [[ $timeout -gt 0 ]]; do
         break
     fi
     
-    ((timeout-=15))
+    ((timeout-=5))
 done
 
 if [[ -z "$GRADIO_URL" ]]; then
@@ -46,7 +46,7 @@ while [[ $timeout -gt 0 ]]; do
         break
     fi
     
-    ((timeout-=15))
+    ((timeout-=5))
 done
 
 if [[ -z "$GRADIO_URL" ]]; then
