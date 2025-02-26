@@ -11,7 +11,7 @@ cd /workspace/facefusion
 nohup python -u facefusion.py run > /workspace/facefusion.log 2>&1 & disown
 
 # Wait for Gradio URL (retry for 60 seconds)
-timeout=60
+timeout=90
 while [[ $timeout -gt 0 ]]; do
     sleep 5
     GRADIO_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/facefusion.log | tail -1)
