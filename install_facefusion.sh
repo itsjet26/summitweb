@@ -64,6 +64,8 @@ sed -i '/pip install -r requirements.txt/i\
 pip install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu121\
 conda deactivate\
 conda activate latentsync' setup_env.sh
+sed -i '/pip install -r requirements.txt/i\
+pip install --upgrade pip setuptools wheel' setup_env.sh
 
 sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
 sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
