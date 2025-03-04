@@ -60,7 +60,6 @@ cd LatentSync
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 sed -i 's/sudo //g' setup_env.sh
-sed -i '/# Download all the checkpoints from HuggingFace/i\pip install huggingface_hub' setup_env.sh
 bash setup_env.sh
 conda deactivate
 
