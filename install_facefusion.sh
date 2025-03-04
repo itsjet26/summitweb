@@ -60,6 +60,12 @@ cd LatentSync
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 sed -i 's/sudo //g' setup_env.sh
+sed -i '/pip install -r requirements.txt/i\
+pip install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu121\
+conda deactivate\
+conda activate latentsync' setup_env.sh
+conda activate latentsync' setup_latentsync.sh
+
 sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
 bash setup_env.sh
 conda deactivate
