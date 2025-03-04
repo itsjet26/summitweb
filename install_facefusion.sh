@@ -62,6 +62,7 @@ echo "📥 Running LatentSync environment setup..."
 sed -i '/^numpy==/d' requirements.txt
 sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
 sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
+sed -i '/^torch==2\.2\.2$/d; /^torchvision==0\.17\.2$/d; /^--extra-index-url https:\/\/download\.pytorch\.org\/whl\/cu121$/d' requirements.txt
 
 #!/bin/bash
 
@@ -75,7 +76,6 @@ conda install -y -c conda-forge ffmpeg
 pip install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu121
 # Python dependencies
 pip install -r requirements.txt
-conda install -y numpy==1.24.4
 # OpenCV dependencies
 apt -y install libgl1
 
