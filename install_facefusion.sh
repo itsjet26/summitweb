@@ -60,6 +60,7 @@ cd LatentSync
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 sed -i 's/sudo //g' setup_env.sh
+sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
 bash setup_env.sh
 conda deactivate
 
