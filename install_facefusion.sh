@@ -47,7 +47,24 @@ conda deactivate
 echo "✅ FaceFusion Installation Complete!"
 
 #############################################
-# New Steps: Download GDrive files and install Pillow
+# Additional Steps for LatentSync
+#############################################
+
+# Change directory back to /workspace
+cd /workspace
+
+echo "🔨 Cloning LatentSync repository..."
+git clone https://github.com/bytedance/LatentSync.git
+cd LatentSync
+
+echo "📥 Running LatentSync environment setup..."
+# The setup_env.sh script sets up a conda environment and installs required packages.
+bash setup_env.sh
+
+echo "✅ LatentSync Setup Complete!"
+
+#############################################
+# Additional Steps: Download GDrive files and install Pillow
 #############################################
 
 # Change directory to /workspace to prepare for the next steps
