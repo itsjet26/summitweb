@@ -59,19 +59,34 @@ cd LatentSync
 
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
-sed -i 's/sudo //g' setup_env.sh
-sed -i '/pip install -r requirements.txt/i\
-pip install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu121\
-conda deactivate\
-conda activate latentsync' setup_env.sh
-sed -i '/conda activate latentsync/a\
-conda install -y numpy==1.24.4' setup_env.sh
 sed -i '/^numpy==/d' requirements.txt
-
-
 sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
 sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
-bash setup_env.sh
+
+#!/bin/bash
+
+# Create a new conda environment
+conda create -y -n latentsync python=3.10.13
+conda activate latentsync
+
+# Install ffmpeg
+conda install -y -c conda-forge ffmpeg
+
+pip install torch==2.2.2 torchvision==0.17.2 --extra-index-url https://download.pytorch.org/whl/cu121
+# Python dependencies
+pip install -r requirements.txt
+conda install -y numpy==1.24.4
+# OpenCV dependencies
+apt -y install libgl1
+
+# Download all the checkpoints from HuggingFace
+huggingface-cli download ByteDance/LatentSync --local-dir checkpoints --exclude "*.git*" "README.md"
+
+# Soft links for the auxiliary models
+mkdir -p ~/.cache/torch/hub/checkpoints
+ln -s $(pwd)/checkpoints/auxiliary/2DFAN4-cd938726ad.zip ~/.cache/torch/hub/checkpoints/2DFAN4-cd938726ad.zip
+ln -s $(pwd)/checkpoints/auxiliary/s3fd-619a316812.pth ~/.cache/torch/hub/checkpoints/s3fd-619a316812.pth
+ln -s $(pwd)/checkpoints/auxiliary/vgg16-397923af.pth ~/.cache/torch/hub/checkpoints/vgg16-397923af.pth
 conda deactivate
 
 echo "✅ LatentSync Setup Complete!"
