@@ -66,6 +66,7 @@ conda deactivate\
 conda activate latentsync' setup_env.sh
 
 sed -i 's/xformers==0\.0\.26/xformers==0.0.26.post1/g' requirements.txt
+sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
 bash setup_env.sh
 conda deactivate
 
