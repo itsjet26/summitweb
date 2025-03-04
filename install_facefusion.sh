@@ -60,6 +60,7 @@ cd LatentSync
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 bash setup_env.sh
+conda deactivate
 
 echo "✅ LatentSync Setup Complete!"
 
