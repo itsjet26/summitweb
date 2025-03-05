@@ -41,6 +41,7 @@ pip install "huggingface_hub[cli]"
 huggingface-cli download Wan-AI/Wan2.1-T2V-14B --local-dir ./Wan2.1-T2V-14B
 pip install modelscope
 modelscope download Wan-AI/Wan2.1-T2V-14B --local_dir ./Wan2.1-T2V-14B
+sed -i 's/demo.launch(server_name="0.0.0.0", share=False, server_port=7860)/demo.launch(server_name="0.0.0.0", share=True, server_port=7860)/' gradio/t2v_14B_singleGPU.py
 conda deactivate
 
 echo "✅ Wan2.1 Installation Complete!"
