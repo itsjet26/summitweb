@@ -31,6 +31,7 @@ cd /workspace
 echo "🐍 Creating Conda environment for WanAI..."
 conda create -n wan2.1 python=3.11 -y
 conda activate wan2.1
+pip install torch>=2.4.0 torchvision>=0.19.0 -f https://download.pytorch.org/whl/torch_stable.html
 
 echo "🔨 Cloning Wan2.1 repository..."
 git clone https://github.com/Wan-Video/Wan2.1.git
