@@ -30,10 +30,27 @@ if [[ -z "$FF_URL" ]]; then
     echo "❌ Failed to get FaceFusion Gradio URL. Falling back to localhost." > /workspace/facefusion_url.txt
 fi
 
+echo "🚀 Starting FileExplorer..."
+cd /workspace/vidgen
+nohup python -u files.py > /workspace/files.log 2>&1 & disown
 
-#############################################
-# Start VidGen
-#############################################
+# Wait for VidGen Gradio URL (retry for up to 60 seconds)
+timeout=60
+while [[ $timeout -gt 0 ]]; do
+    sleep 5
+    VIDGEN_URL=$(grep -oP 'Running on public URL: \K(https://.*)' /workspace/files.log | tail -1)
+    if [[ -n "$VIDGEN_URL" ]]; then
+        echo "$VIDGEN_URL" > /workspace/files_url.txt
+        echo "✅ VidGen Public URL: $VIDGEN_URL"
+        break
+    fi
+    ((timeout-=5))
+done
+
+if [[ -z "$VIDGEN_URL" ]]; then
+    echo "❌ Failed to get VidGen Gradio URL. Falling back to localhost." > /workspace/files_url.txt
+fi
+
 echo "🚀 Starting VidGen..."
 cd /workspace/vidgen
 nohup python -u generator.py > /workspace/vidgen.log 2>&1 & disown
