@@ -41,7 +41,7 @@ pip install --upgrade pip
 pip install -r requirements.txt
 pip install onnxruntime-gpu
 python install.py --onnxruntime cuda
-sed -i "s/ui.launch(favicon_path/ui.launch(show_api=False, share=True, favicon_path/" facefusion/uis/layouts/default.py
+sed -i "s/ui.launch(favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/ui.launch(server_name=\"0.0.0.0\", share=False, server_port=7860, favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/" facefusion/uis/layouts/default.py
 conda deactivate
 
 echo "✅ FaceFusion Installation Complete!"
@@ -61,7 +61,7 @@ echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 sed -i 's/xformers==0\.0\.26/xformers==0.0.25.post1/g' requirements.txt
 sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
-
+sed -i "s/demo.launch(inbrowser=True, share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7861, inbrowser=True)/" gradio_app.py
 
 #!/bin/bash
 
