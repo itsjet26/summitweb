@@ -107,7 +107,7 @@ pip install gdown
 # The folder id here is "19mSqb4FklllysWOOodunA_BEhMizRU72".
 echo "📥 Downloading additional files from Google Drive..."
 gdown --folder "https://drive.google.com/drive/folders/19mSqb4FklllysWOOodunA_BEhMizRU72?usp=drive_link"
-sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7861, inbrowser=True)/" vidgen/generator.py
+sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7862, inbrowser=True)/" vidgen/generator.py
 
 # Install Pillow version 10.2.0
 echo "📦 Installing Pillow==10.2.0..."
