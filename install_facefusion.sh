@@ -76,7 +76,7 @@ conda install -y -c conda-forge ffmpeg
 pip install -r requirements.txt
 pip uninstall gradio_client -y
 pip uninstall gradio -y
-pip install gradio==5.11.0
+pip install gradio
 
 # OpenCV dependencies
 apt -y install libgl1
