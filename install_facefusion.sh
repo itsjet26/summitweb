@@ -82,7 +82,8 @@ pip install gradio
 apt -y install libgl1
 
 # Download all the checkpoints from HuggingFace
-huggingface-cli download ByteDance/LatentSync-1.5 --local-dir checkpoints --exclude "*.git*" "README.md"
+huggingface-cli download ByteDance/LatentSync-1.5 whisper/tiny.pt --local-dir checkpoints
+huggingface-cli download ByteDance/LatentSync-1.5 latentsync_unet.pt --local-dir checkpoints
 
 # Soft links for the auxiliary models
 mkdir -p ~/.cache/torch/hub/checkpoints
