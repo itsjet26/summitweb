@@ -209,4 +209,4 @@ with gr.Blocks(title="LatentSync demo") as demo:
     )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", share=False, server_port=7862, inbrowser=True)
+    demo.launch(server_name="0.0.0.0", share=False, server_port=7861, inbrowser=True)
