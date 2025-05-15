@@ -30,25 +30,27 @@ def convert_gdrive_url(gdrive_url):
 def download_gdrive_file(gdrive_url):
     try:
         if not gdrive_url:
-            return None, "No Google Drive URL provided"
+            return None, "Please provide a Google Drive URL"
 
         # Convert to direct download URL
         direct_url = convert_gdrive_url(gdrive_url)
         if not direct_url:
             return None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view)."
 
-        # Create temp directory for downloads
-        download_dir = Path("./temp/downloads")
+        # Create download directory
+        download_dir = Path("./downloads")
         download_dir.mkdir(parents=True, exist_ok=True)
 
-        # Download file using gdown with direct URL
-        output_path = gdown.download(direct_url, quiet=False, output=str(download_dir))
+        # Download file using gdown, saving to download_dir with original filename
+        output_path = gdown.download(direct_url, quiet=False, output=str(download_dir) + "/")
 
-        # Check if file was downloaded
-        if output_path and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            return output_path, f"File downloaded successfully as {os.path.basename(output_path)}"
-        else:
-            return None, "Download failed. The file may not be accessible or the URL may be invalid."
+        # Check if file was downloaded and exists
+        if not output_path or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            return None, "Download failed. The file may be empty or inaccessible."
+
+        print(
+            f"Downloaded file: {output_path}, exists: {os.path.exists(output_path)}, size: {os.path.getsize(output_path)} bytes")
+        return output_path, f"File downloaded successfully as {os.path.basename(output_path)}"
 
     except Exception as e:
         return None, f"Error downloading file: {str(e)}"
@@ -60,30 +62,33 @@ def process_video(
         guidance_scale,
         inference_steps,
         seed,
-        gdrive_url=None
+        downloaded_video_path=None
 ):
-    # Create the temp directory if it doesn't exist
+    # Create output directory for processed video
     output_dir = Path("./temp")
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Handle Google Drive URL if provided
-    if gdrive_url and not video_path:
-        video_path, download_status = download_gdrive_file(gdrive_url)
-        if not video_path:
-            raise gr.Error(download_status)
+    # Use downloaded video path if provided and no video is uploaded
+    if downloaded_video_path and not video_path:
+        video_path = downloaded_video_path
 
     # Check if video path is provided
     if not video_path:
-        raise gr.Error("Please provide a video file or a valid Google Drive URL")
+        raise gr.Error("Please provide a video file or download a video using the Google Drive URL")
 
-    # Convert paths to absolute Path objects and normalize them
+    # Verify the video file exists
     video_file_path = Path(video_path)
+    print(f"Input video path: {video_file_path}, exists: {video_file_path.exists()}")
+    if not video_file_path.exists():
+        raise gr.Error(f"Video file not found at {video_file_path}")
+
+    # Use the video path directly
     video_path = video_file_path.absolute().as_posix()
     audio_path = Path(audio_path).absolute().as_posix()
 
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     # Set the output path for the processed video
-    output_path = str(output_dir / f"{video_file_path.stem}_{current_time}.mp4")
+    output_path = str(output_dir / f"{Path(video_path).stem}_{current_time}.mp4")
 
     config = OmegaConf.load(CONFIG_PATH)
 
@@ -105,8 +110,13 @@ def process_video(
         print("Processing completed successfully.")
         return output_path
     except Exception as e:
-        print(f"Error during processing: {str(e)}")
-        raise gr.Error(f"Error during processing: {str(e)}")
+        error_msg = str(e)
+        if "stack expects a non-empty TensorList" in error_msg:
+            error_msg = "No faces detected in the video. Please use a video with at least one visible face."
+        elif "Could not open video" in error_msg:
+            error_msg = f"Could not open video at {video_path}. Ensure the file is a valid video format (e.g., .mp4)."
+        print(f"Error during processing: {error_msg}")
+        raise gr.Error(f"Error during processing: {error_msg}")
 
 
 def create_args(
@@ -161,11 +171,14 @@ with gr.Blocks(title="LatentSync demo") as demo:
     with gr.Row():
         with gr.Column():
             video_input = gr.Video(label="Input Video")
-            gdrive_url_input = gr.Textbox(
-                label="Google Drive Video URL",
-                placeholder="Enter Google Drive URL (e.g., https://drive.google.com/file/d/FILE_ID/view)",
-                lines=1
-            )
+            with gr.Row():
+                gdrive_url_input = gr.Textbox(
+                    label="Google Drive Video URL",
+                    placeholder="Enter Google Drive URL (e.g., https://drive.google.com/file/d/FILE_ID/view)",
+                    lines=1
+                )
+                download_btn = gr.Button("Download")
+            download_status = gr.Textbox(label="Download Status", interactive=False)
             audio_input = gr.Audio(label="Input Audio", type="filepath")
 
             with gr.Row():
@@ -195,6 +208,17 @@ with gr.Blocks(title="LatentSync demo") as demo:
                 inputs=[video_input, audio_input],
             )
 
+    # State to store the downloaded video path
+    downloaded_video_path = gr.State(value=None)
+
+    # Download button action
+    download_btn.click(
+        fn=download_gdrive_file,
+        inputs=[gdrive_url_input],
+        outputs=[downloaded_video_path, download_status]
+    )
+
+    # Process button action
     process_btn.click(
         fn=process_video,
         inputs=[
@@ -203,7 +227,7 @@ with gr.Blocks(title="LatentSync demo") as demo:
             guidance_scale,
             inference_steps,
             seed,
-            gdrive_url_input
+            downloaded_video_path
         ],
         outputs=video_output,
     )
