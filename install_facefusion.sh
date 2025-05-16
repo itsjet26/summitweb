@@ -61,7 +61,7 @@ echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
 sed -i 's/xformers==0\.0\.26/xformers==0.0.25.post1/g' requirements.txt
 sed -i 's/mediapipe==0\.10\.11/mediapipe==0.10\.13/g' requirements.txt
-sed -i "s/demo.launch(inbrowser=True, share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7861, inbrowser=True)/" gradio_app.py
+cp /summitweb/gradio_app.py /workspace/LatentSync/gradio_app.py
 
 #!/bin/bash
 
@@ -77,6 +77,7 @@ pip install -r requirements.txt
 pip uninstall gradio_client -y
 pip uninstall gradio -y
 pip install gradio
+pip install gdown
 
 # OpenCV dependencies
 apt -y install libgl1
