@@ -11,6 +11,20 @@ import tempfile
 
 CONFIG_PATH = Path("configs/unet/stage2.yaml")
 CHECKPOINT_PATH = Path("checkpoints/latentsync_unet.pt")
+LOG_FILE_PATH = Path("/workspace/latentsync.log")
+
+
+def read_log_file():
+    """Read the last 50 lines of the log file."""
+    try:
+        if not LOG_FILE_PATH.exists():
+            return "Log file not found at /workspace/latentsync.log"
+        with open(LOG_FILE_PATH, "r") as f:
+            lines = f.readlines()
+            # Return the last 50 lines to avoid overwhelming the UI
+            return "".join(lines[-50:]).strip()
+    except Exception as e:
+        return f"Error reading log file: {str(e)}"
 
 
 def convert_gdrive_url(gdrive_url):
@@ -31,12 +45,12 @@ def convert_gdrive_url(gdrive_url):
 def download_gdrive_file(gdrive_url):
     try:
         if not gdrive_url:
-            return None, None, "Please provide a Google Drive URL"
+            return None, None, "Please provide a Google Drive URL", read_log_file()
 
         # Convert to direct download URL
         direct_url = convert_gdrive_url(gdrive_url)
         if not direct_url:
-            return None, None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view)."
+            return None, None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view).", read_log_file()
 
         # Get the system's temporary directory
         temp_dir = Path(tempfile.gettempdir())
@@ -47,14 +61,15 @@ def download_gdrive_file(gdrive_url):
 
         # Check if file was downloaded and exists
         if not temp_file_path or not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
-            return None, None, "Download failed. The file may be empty or inaccessible."
+            return None, None, "Download failed. The file may be empty or inaccessible.", read_log_file()
 
         print(
             f"Downloaded file: {temp_file_path}, exists: {os.path.exists(temp_file_path)}, size: {os.path.getsize(temp_file_path)} bytes")
-        return temp_file_path, temp_file_path, f"File downloaded successfully as {os.path.basename(temp_file_path)}"
+        return temp_file_path, temp_file_path, f"File downloaded successfully as {os.path.basename(temp_file_path)}", read_log_file()
 
     except Exception as e:
-        return None, None, f"Error downloading file: {str(e)}"
+        print(f"Error downloading file: {str(e)}")
+        return None, None, f"Error downloading file: {str(e)}", read_log_file()
 
 
 def process_video(
@@ -104,7 +119,7 @@ def process_video(
             args=args,
         )
         print("Processing completed successfully.")
-        return output_path
+        return output_path, read_log_file()
     except Exception as e:
         error_msg = str(e)
         if "stack expects a non-empty TensorList" in error_msg:
@@ -203,12 +218,13 @@ with gr.Blocks(title="LatentSync demo") as demo:
                 ],
                 inputs=[video_input, audio_input],
             )
+            log_display = gr.Textbox(label="Log File (/workspace/latentsync.log)", interactive=False, lines=10)
 
     # Download button action
     download_btn.click(
         fn=download_gdrive_file,
         inputs=[gdrive_url_input],
-        outputs=[video_input, video_input, download_status]  # Update video_input twice (value and display) + status
+        outputs=[video_input, video_input, download_status, log_display]
     )
 
     # Process button action
@@ -221,7 +237,7 @@ with gr.Blocks(title="LatentSync demo") as demo:
             inference_steps,
             seed
         ],
-        outputs=video_output,
+        outputs=[video_output, log_display],
     )
 
 if __name__ == "__main__":
