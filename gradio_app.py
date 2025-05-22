@@ -8,13 +8,14 @@ import gdown
 import os
 import re
 import tempfile
+import torch
 
 CONFIG_PATH = Path("configs/unet/stage2.yaml")
 CHECKPOINT_PATH = Path("checkpoints/latentsync_unet.pt")
 LOG_FILE_PATH = Path("/workspace/latentsync.log")
 
 
-def tail_log_file():
+def read_log_file():
     """Read the last 50 lines of the log file."""
     try:
         if not LOG_FILE_PATH.exists():
@@ -45,12 +46,12 @@ def convert_gdrive_url(gdrive_url):
 def download_gdrive_file(gdrive_url):
     try:
         if not gdrive_url:
-            return None, None, "Please provide a Google Drive URL", tail_log_file()
+            return None, None, "Please provide a Google Drive URL"
 
         # Convert to direct download URL
         direct_url = convert_gdrive_url(gdrive_url)
         if not direct_url:
-            return None, None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view).", tail_log_file()
+            return None, None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view)."
 
         # Get the system's temporary directory
         temp_dir = Path(tempfile.gettempdir())
@@ -61,15 +62,15 @@ def download_gdrive_file(gdrive_url):
 
         # Check if file was downloaded and exists
         if not temp_file_path or not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
-            return None, None, "Download failed. The file may be empty or inaccessible.", tail_log_file()
+            return None, None, "Download failed. The file may be empty or inaccessible."
 
         print(
             f"Downloaded file: {temp_file_path}, exists: {os.path.exists(temp_file_path)}, size: {os.path.getsize(temp_file_path)} bytes")
-        return temp_file_path, temp_file_path, f"File downloaded successfully as {os.path.basename(temp_file_path)}", tail_log_file()
+        return temp_file_path, temp_file_path, f"File downloaded successfully as {os.path.basename(temp_file_path)}"
 
     except Exception as e:
         print(f"Error downloading file: {str(e)}")
-        return None, None, f"Error downloading file: {str(e)}", tail_log_file()
+        return None, None, f"Error downloading file: {str(e)}"
 
 
 def process_video(
@@ -100,26 +101,56 @@ def process_video(
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     # Set the output path for the processed video
     output_path = str(output_dir / f"{Path(video_path).stem}_{current_time}.mp4")
+    print(f"Output video path: {output_path}")
 
     config = OmegaConf.load(CONFIG_PATH)
 
+    # Update configuration for multi-GPU and batch processing
     config["run"].update(
         {
             "guidance_scale": guidance_scale,
             "inference_steps": inference_steps,
+            "batch_size": 8,  # Increase batch size for parallel processing
+            "use_multi_gpu": True,  # Enable multi-GPU support
         }
     )
 
-    # Parse the arguments
-    args = create_args(video_path, audio_path, output_path, inference_steps, guidance_scale, seed)
+    # Verify available GPUs
+    num_gpus = torch.cuda.device_count()
+    print(f"Detected {num_gpus} GPUs: {[torch.cuda.get_device_name(i) for i in range(num_gpus)]}")
+    if num_gpus < 1:
+        raise gr.Error("No CUDA-capable GPUs detected. Ensure CUDA is installed and GPUs are available.")
+    elif num_gpus == 1:
+        print("Only one GPU detected; multi-GPU optimization will not apply.")
+
+    # Parse the arguments with multi-GPU settings
+    args = create_args(video_path, audio_path, output_path, inference_steps, guidance_scale, seed, num_gpus)
 
     try:
+        if num_gpus > 1:
+            print("Enabling multi-GPU processing with DataParallel")
         result = main(
             config=config,
             args=args,
         )
-        print("Processing completed successfully.")
-        return output_path, tail_log_file()
+        print(f"Main returned: {result}")
+
+        # Validate the result
+        if not result or not isinstance(result, str):
+            print(f"Error: main returned invalid result: {result}")
+            raise gr.Error(f"Processing failed: main returned invalid result: {result}")
+
+        result_path = Path(result)
+        if not result_path.exists():
+            print(f"Error: Output file does not exist at {result}")
+            raise gr.Error(f"Processing failed: Output file not found at {result}")
+        if result_path.stat().st_size == 0:
+            print(f"Error: Output file at {result} is empty")
+            raise gr.Error(f"Processing failed: Output file at {result} is empty")
+
+        print(f"Processing completed successfully. Output file: {result}, size: {result_path.stat().st_size} bytes")
+        return str(result_path.absolute())  # Ensure absolute path for Gradio
+
     except Exception as e:
         error_msg = str(e)
         if "stack expects a non-empty TensorList" in error_msg:
@@ -131,7 +162,8 @@ def process_video(
 
 
 def create_args(
-        video_path: str, audio_path: str, output_path: str, inference_steps: int, guidance_scale: float, seed: int
+        video_path: str, audio_path: str, output_path: str, inference_steps: int, guidance_scale: float, seed: int,
+        num_gpus: int
 ) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--inference_ckpt_path", type=str, required=True)
@@ -141,6 +173,7 @@ def create_args(
     parser.add_argument("--inference_steps", type=int, default=20)
     parser.add_argument("--guidance_scale", type=float, default=1.0)
     parser.add_argument("--seed", type=int, default=1247)
+    parser.add_argument("--num_gpus", type=int, default=1)  # Add num_gpus argument
 
     return parser.parse_args(
         [
@@ -158,6 +191,8 @@ def create_args(
             str(guidance_scale),
             "--seed",
             str(seed),
+            "--num_gpus",
+            str(num_gpus),
         ]
     )
 
@@ -167,7 +202,7 @@ with gr.Blocks(title="LatentSync demo") as demo:
     gr.Markdown(
         """
         <h1 align="center">LatentSync</h1>
-    
+
         <div style="display:flex;justify-content:center;column-gap:4px;">
             <a href="https://github.com/bytedance/LatentSync">
                 <img src='https://img.shields.io/badge/GitHub-Repo-blue'>
@@ -219,20 +254,20 @@ with gr.Blocks(title="LatentSync demo") as demo:
                 inputs=[video_input, audio_input],
             )
             log_display = gr.Textbox(label="Log File (/workspace/latentsync.log)", interactive=False, lines=10)
+            refresh_log_btn = gr.Button("Refresh Log")
 
-    # Timer to update log display every second
-    with gr.Timer(interval=1.0):
-        log_display.change(
-            fn=tail_log_file,
-            inputs=[],
-            outputs=[log_display]
-        )
+    # Refresh log button action
+    refresh_log_btn.click(
+        fn=read_log_file,
+        inputs=[],
+        outputs=[log_display]
+    )
 
     # Download button action
     download_btn.click(
         fn=download_gdrive_file,
         inputs=[gdrive_url_input],
-        outputs=[video_input, video_input, download_status, log_display]
+        outputs=[video_input, video_input, download_status]
     )
 
     # Process button action
@@ -245,8 +280,8 @@ with gr.Blocks(title="LatentSync demo") as demo:
             inference_steps,
             seed
         ],
-        outputs=[video_output, log_display],
+        outputs=[video_output]
     )
 
 if __name__ == "__main__":
-    demo.launch(server_name="0.0.0.0", share=False, server_port=7861, inbrowser=True)
+    demo.launch(server_name="0.0.0.0", server_port=7861)
