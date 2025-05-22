@@ -7,6 +7,7 @@ from datetime import datetime
 import gdown
 import os
 import re
+import tempfile
 
 CONFIG_PATH = Path("configs/unet/stage2.yaml")
 CHECKPOINT_PATH = Path("checkpoints/latentsync_unet.pt")
@@ -30,30 +31,30 @@ def convert_gdrive_url(gdrive_url):
 def download_gdrive_file(gdrive_url):
     try:
         if not gdrive_url:
-            return None, "Please provide a Google Drive URL"
+            return None, None, "Please provide a Google Drive URL"
 
         # Convert to direct download URL
         direct_url = convert_gdrive_url(gdrive_url)
         if not direct_url:
-            return None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view)."
+            return None, None, "Invalid Google Drive URL. Ensure it contains a valid file ID (e.g., https://drive.google.com/file/d/FILE_ID/view)."
 
-        # Create download directory
-        download_dir = Path("./downloads")
-        download_dir.mkdir(parents=True, exist_ok=True)
+        # Get the system's temporary directory
+        temp_dir = Path(tempfile.gettempdir())
+        temp_dir.mkdir(parents=True, exist_ok=True)
 
-        # Download file using gdown, saving to download_dir with original filename
-        output_path = gdown.download(direct_url, quiet=False, output=str(download_dir) + "/")
+        # Download file to temporary directory
+        temp_file_path = gdown.download(direct_url, quiet=False, output=str(temp_dir) + "/")
 
         # Check if file was downloaded and exists
-        if not output_path or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-            return None, "Download failed. The file may be empty or inaccessible."
+        if not temp_file_path or not os.path.exists(temp_file_path) or os.path.getsize(temp_file_path) == 0:
+            return None, None, "Download failed. The file may be empty or inaccessible."
 
         print(
-            f"Downloaded file: {output_path}, exists: {os.path.exists(output_path)}, size: {os.path.getsize(output_path)} bytes")
-        return output_path, f"File downloaded successfully as {os.path.basename(output_path)}"
+            f"Downloaded file: {temp_file_path}, exists: {os.path.exists(temp_file_path)}, size: {os.path.getsize(temp_file_path)} bytes")
+        return temp_file_path, temp_file_path, f"File downloaded successfully as {os.path.basename(temp_file_path)}"
 
     except Exception as e:
-        return None, f"Error downloading file: {str(e)}"
+        return None, None, f"Error downloading file: {str(e)}"
 
 
 def process_video(
@@ -61,16 +62,11 @@ def process_video(
         audio_path,
         guidance_scale,
         inference_steps,
-        seed,
-        downloaded_video_path=None
+        seed
 ):
     # Create output directory for processed video
     output_dir = Path("./temp")
     output_dir.mkdir(parents=True, exist_ok=True)
-
-    # Use downloaded video path if provided and no video is uploaded
-    if downloaded_video_path and not video_path:
-        video_path = downloaded_video_path
 
     # Check if video path is provided
     if not video_path:
@@ -208,14 +204,11 @@ with gr.Blocks(title="LatentSync demo") as demo:
                 inputs=[video_input, audio_input],
             )
 
-    # State to store the downloaded video path
-    downloaded_video_path = gr.State(value=None)
-
     # Download button action
     download_btn.click(
         fn=download_gdrive_file,
         inputs=[gdrive_url_input],
-        outputs=[downloaded_video_path, download_status]
+        outputs=[video_input, video_input, download_status]  # Update video_input twice (value and display) + status
     )
 
     # Process button action
@@ -226,8 +219,7 @@ with gr.Blocks(title="LatentSync demo") as demo:
             audio_input,
             guidance_scale,
             inference_steps,
-            seed,
-            downloaded_video_path
+            seed
         ],
         outputs=video_output,
     )
