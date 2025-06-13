@@ -98,6 +98,7 @@ def process_batch(local_batch_path, selected_folders, guidance_scale, inference_
             if not video_files or not audio_files:
                 log_msg = f"{folder} status: skipped (missing video or audio)"
                 with open(BATCH_LOG_FILE_PATH, "a", encoding="utf-8") as f: f.write(log_msg + "\n")
+                torch.cuda.empty_cache()
                 continue
             video_path, audio_path = video_files[0], audio_files[0]
             log_msg = f"{folder} status: processing"
@@ -113,6 +114,7 @@ def process_batch(local_batch_path, selected_folders, guidance_scale, inference_
                 log_msg = f"{folder} status: FAILED with error: {e}"
             with open(BATCH_LOG_FILE_PATH, "a", encoding="utf-8") as f:
                 f.write(log_msg + "\n")
+            torch.cuda.empty_cache()
     except Exception as e:
         error_message = f"Batch processing error: {str(e)}"
         with open(BATCH_LOG_FILE_PATH, "a", encoding="utf-8") as f:
@@ -180,8 +182,10 @@ def process_video_for_single_mode(video_path, audio_path, guidance_scale, infere
         result_path = Path(output_path)
         if not result_path.exists() or result_path.stat().st_size == 0:
             raise gr.Error(f"Processing failed: Output file at {output_path} is empty or not created.")
+        torch.cuda.empty_cache()
         return str(result_path.absolute())
     except Exception as e:
+        torch.cuda.empty_cache()
         raise gr.Error(f"Error during processing: {str(e)}")
 
 
