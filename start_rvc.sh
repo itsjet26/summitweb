@@ -70,7 +70,7 @@ TORCHELASTIC_ENABLE_FILE_LOGGING=1 torchrun \
     --use-deepcache 1 \
     --flow-shift-eval-video 5.0 &
 
-python3 hymm_gradio/gradio_audio.py
+python hymm_gradio/gradio_audio.py
 
 echo "✅ HunyuanVideo-Avatar started."
 conda deactivate
