@@ -103,6 +103,9 @@ python -m pip install -r requirements.txt
 python -m pip install ninja
 python -m pip install git+https://github.com/Dao-AILab/flash-attention.git@v2.6.3
 pip install --force-reinstall pydantic==2.10.6
+python -m pip install "huggingface_hub[cli]"
+cd /workspace/HunyuanVideo-Avatar/weights
+huggingface-cli download tencent/HunyuanVideo-Avatar --local-dir ./
 
 echo "✅ LatentSync Setup Complete!"
 
