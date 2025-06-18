@@ -54,12 +54,8 @@ export MODEL_BASE=./weights
 
 checkpoint_path=${MODEL_BASE}/ckpts/hunyuan-video-t2v-720p/transformers/mp_rank_00_model_states.pt
 
-# Add the environment variable here
-TORCHELASTIC_ENABLE_FILE_LOGGING=1 torchrun \
-    --nnodes=1 \
-    --nproc_per_node=8 \
-    --master_port 29605 \
-    hymm_gradio/flask_audio.py \
+
+torchrun --nnodes=1 --nproc_per_node=8 --master_port 29605 hymm_gradio/flask_audio.py \
     --input 'assets/test.csv' \
     --ckpt ${checkpoint_path} \
     --sample-n-frames 129 \
@@ -68,7 +64,8 @@ TORCHELASTIC_ENABLE_FILE_LOGGING=1 torchrun \
     --cfg-scale 7.5 \
     --infer-steps 50 \
     --use-deepcache 1 \
-    --flow-shift-eval-video 5.0 &
+    --flow-shift-eval-video 5.0  &
+
 
 python hymm_gradio/gradio_audio.py
 
