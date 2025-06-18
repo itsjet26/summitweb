@@ -55,7 +55,7 @@ export MODEL_BASE=./weights
 checkpoint_path=${MODEL_BASE}/ckpts/hunyuan-video-t2v-720p/transformers/mp_rank_00_model_states.pt
 
 
-torchrun --nnodes=1 --nproc_per_node=8 --master_port 29605 hymm_gradio/flask_audio.py \
+torchrun --nnodes=1 --nproc_per_node=2 --master_port 29605 hymm_gradio/flask_audio.py \
     --input 'assets/test.csv' \
     --ckpt ${checkpoint_path} \
     --sample-n-frames 129 \
