@@ -58,9 +58,9 @@ checkpoint_path=${MODEL_BASE}/ckpts/hunyuan-video-t2v-720p/transformers/mp_rank_
 torchrun --nnodes=1 --nproc_per_node=2 --master_port 29605 hymm_gradio/flask_audio.py \
     --input 'assets/test.csv' \
     --ckpt ${checkpoint_path} \
-    --sample-n-frames 129 \
+    --sample-n-frames 64 \
     --seed 128 \
-    --image-size 704 \
+    --image-size 560 \
     --cfg-scale 7.5 \
     --infer-steps 50 \
     --use-deepcache 1 \
