@@ -93,7 +93,6 @@ cd HunyuanVideo-Avatar
 
 echo "📥 Running LatentSync environment setup..."
 # The setup_env.sh script sets up a conda environment and installs required packages.
-cp /summitweb/gradio_audio.py /workspace/HunyuanVideo-Avatar/gradio_audio.py
 
 #!/bin/bash
 
