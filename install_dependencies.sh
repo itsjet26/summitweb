@@ -103,6 +103,7 @@ conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=
 python -m pip install -r requirements.txt
 python -m pip install ninja
 python -m pip install git+https://github.com/Dao-AILab/flash-attention.git@v2.6.3
+pip install --force-reinstall pydantic==2.10.6
 
 echo "✅ LatentSync Setup Complete!"
 
