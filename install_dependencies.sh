@@ -5,7 +5,7 @@ set -o pipefail  # Fail pipeline if any command fails
 
 echo "🚀 Updating and installing dependencies..."
 apt update
-apt install -y git-all curl ffmpeg wget openssh-server p7zip-full cmake build-essential python3-opencv
+apt install -y git curl ffmpeg wget openssh-server p7zip-full cmake build-essential python3-opencv
 
 echo "🔑 Setting up SSH access..."
 mkdir -p ~/.ssh
@@ -24,7 +24,6 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
-
 echo "🛠️ Setting up Conda environments..."
 
 cd /workspace
@@ -34,44 +33,103 @@ conda create --name facefusion python=3.12 -y
 conda activate facefusion
 conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+
+echo "🔨 Cloning FaceFusion repository..."
 git clone https://github.com/facefusion/facefusion.git
 cd facefusion
 pip install --upgrade pip
 pip install -r requirements.txt
 pip install onnxruntime-gpu
 python install.py --onnxruntime cuda
-sed -i "s/ui.launch(favicon_path/ui.launch(show_api=False, share=True, favicon_path/" facefusion/uis/layouts/default.py
+sed -i "s/ui.launch(favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/ui.launch(server_name=\"0.0.0.0\", share=False, server_port=7860, favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/" facefusion/uis/layouts/default.py
 conda deactivate
 
+echo "✅ FaceFusion Installation Complete!"
+
+#############################################
+# Additional Steps for LatentSync
+#############################################
+
+# Change directory back to /workspace
 cd /workspace
 
-echo "🎥 Creating Conda environment for Video-Retalking..."
-conda create -n video_retalking python=3.8 -y
-conda activate video_retalking
-conda install pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.8 -c pytorch -c nvidia
-git clone https://github.com/vinthony/video-retalking.git
-cp /summitweb/webUI.py /workspace/video-retalking/webUI.py
-cd video-retalking
-conda install -y ffmpeg
-conda install -c conda-forge dlib
+echo "🔨 Cloning LatentSync repository..."
+git clone https://github.com/bytedance/LatentSync.git
+cd LatentSync
+
+echo "📥 Running LatentSync environment setup..."
+# The setup_env.sh script sets up a conda environment and installs required packages.
+cp /summitweb/gradio_app.py /workspace/LatentSync/gradio_app.py
+
+#!/bin/bash
+
+# Create a new conda environment
+conda create -y -n latentsync python=3.10.13
+conda activate latentsync
+
+# Install ffmpeg
+conda install -y -c conda-forge ffmpeg
+
+# Python dependencies
 pip install -r requirements.txt
+
 pip install gdown
 
-mkdir -p ./checkpoints
-GDRIVE_FOLDER_ID="18rhjMpxK8LVVxf7PI6XwOidt8Vouv_H0"
+# OpenCV dependencies
+apt -y install libgl1
 
-echo "📥 Downloading checkpoints from Google Drive..."
-gdown --folder "https://drive.google.com/drive/folders/$GDRIVE_FOLDER_ID" -O ./checkpoints
+# Download all the checkpoints from HuggingFace
+huggingface-cli download ByteDance/LatentSync-1.5 whisper/tiny.pt --local-dir checkpoints
+huggingface-cli download ByteDance/LatentSync-1.5 latentsync_unet.pt --local-dir checkpoints
 
-if [[ "$(ls -A ./checkpoints)" ]]; then
-    echo "✅ All required checkpoint files have been downloaded successfully."
-else
-    echo "❌ Failed to download checkpoint files. Please check your Google Drive link or permissions."
-    exit 1
-fi
+echo "✅ LatentSync Setup Complete!"
 
-sed -i "s/from torchvision.transforms.functional_tensor import rgb_to_grayscale/from torchvision.transforms.functional import rgb_to_grayscale/" $HOME/miniconda/envs/video_retalking/lib/python3.8/site-packages/basicsr/data/degradations.py
+# Change directory back to /workspace
+cd /workspace
+
+echo "🔨 Cloning Hunyuan repository..."
+git clone https://github.com/Tencent-Hunyuan/HunyuanVideo-Avatar.git
+cd HunyuanVideo-Avatar
+
+echo "📥 Running LatentSync environment setup..."
+# The setup_env.sh script sets up a conda environment and installs required packages.
+cp /summitweb/gradio_audio.py /workspace/HunyuanVideo-Avatar/gradio_audio.py
+
+#!/bin/bash
+
+conda create -n HunyuanVideo-Avatar python==3.10.9
+conda activate HunyuanVideo-Avatar
+conda install pytorch==2.4.0 torchvision==0.19.0 torchaudio==2.4.0 pytorch-cuda=12.4 -c pytorch -c nvidia
+python -m pip install -r requirements.txt
+python -m pip install ninja
+python -m pip install git+https://github.com/Dao-AILab/flash-attention.git@v2.6.3
+
+echo "✅ LatentSync Setup Complete!"
+
+#############################################
+# Additional Steps: Download GDrive files and install Pillow
+#############################################
+
+# Change directory to /workspace to prepare for the next steps
+cd /workspace
+
+# Activate the facefusion environment again
+conda activate facefusion
+
+# Install gdown (if not already installed) to download files from Google Drive
+pip install gdown
+
+# Download the files from the specified Google Drive folder.
+# Replace <FOLDER_ID> with the folder id extracted from the URL.
+# The folder id here is "19mSqb4FklllysWOOodunA_BEhMizRU72".
+echo "📥 Downloading additional files from Google Drive..."
+gdown --folder "https://drive.google.com/drive/folders/19mSqb4FklllysWOOodunA_BEhMizRU72?usp=drive_link"
+sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7862, inbrowser=True)/" vidgen/generator.py
+
+# Install Pillow version 10.2.0
+echo "📦 Installing Pillow==10.2.0..."
+pip install pillow==10.2.0
 
 conda deactivate
 
-echo "✅ Installation Complete! Now run 'install_rvc.sh' before starting programs."
+echo "🎉 Setup complete!"
