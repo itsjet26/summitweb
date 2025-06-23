@@ -229,7 +229,7 @@ def generate_all_previews(main_video_path, avatar_file_paths, progress=gr.Progre
                 print(f"Warning: Could not read first frame from avatar video {avatar_video_path}. Skipping.")
                 continue
 
-            zoom_factor = random.uniform(1.0, 2.5)
+            zoom_factor = random.uniform(1.0, 1.2)
             cropped_width = int(main_w / zoom_factor)
             cropped_height = max(1, min(int(main_h / zoom_factor), main_h))
             cropped_width = max(1, min(cropped_width, main_w))
@@ -239,8 +239,8 @@ def generate_all_previews(main_video_path, avatar_file_paths, progress=gr.Progre
             processed_main_frame = initial_main_frame_raw[crop_y:crop_y + cropped_height, crop_x:crop_x + cropped_width]
             processed_main_frame = cv2.resize(processed_main_frame, (main_w, main_h), interpolation=cv2.INTER_AREA)
 
-            target_avatar_h_min = main_h / 8
-            target_avatar_h_max = main_h / 6
+            target_avatar_h_min = main_h / 4
+            target_avatar_h_max = main_h / 3
             target_avatar_height = random.uniform(target_avatar_h_min, target_avatar_h_max)
             avatar_aspect_ratio = avatar_frame.shape[1] / avatar_frame.shape[0]
             scaled_avatar_h = int(target_avatar_height)
