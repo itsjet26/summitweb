@@ -341,7 +341,7 @@ def generate_videos(main_video_path, avatar_file_paths, progress=gr.Progress()):
                 out.release()
                 continue
 
-            zoom_factor = random.uniform(1.0, 1.15)
+            zoom_factor = random.uniform(1.0, 1.2)
             cropped_width = int(main_width / zoom_factor)
             cropped_height = max(1, min(int(main_height / zoom_factor), main_height))
             cropped_width = max(1, min(cropped_width, main_width))
