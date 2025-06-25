@@ -74,6 +74,7 @@ conda install -y -c conda-forge ffmpeg
 pip install -r requirements.txt
 
 pip install gdown
+pip install flask
 
 # OpenCV dependencies
 apt -y install libgl1
