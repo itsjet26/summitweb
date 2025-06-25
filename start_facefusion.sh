@@ -40,8 +40,8 @@ nohup python -u gradio_app.py > /workspace/latentsync.log 2>&1 & disown
 echo "✅ LatentSync started."
 
 echo "🚀 Overlayer Explorer..."
-cd /summitweb
-nohup python -u overlayer.py > /workspace/overlayer.log 2>&1 & disown
+cd /workspace/overlayer
+nohup python -u app.py > /workspace/overlayer.log 2>&1 & disown
 echo "✅ Overlayer started."
 conda deactivate
 
