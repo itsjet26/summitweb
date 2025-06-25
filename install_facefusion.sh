@@ -95,9 +95,6 @@ cd /workspace
 # Activate the facefusion environment again
 conda activate facefusion
 
-# Install gdown (if not already installed) to download files from Google Drive
-pip install gdown
-
 # Download the files from the specified Google Drive folder.
 # Replace <FOLDER_ID> with the folder id extracted from the URL.
 # The folder id here is "19mSqb4FklllysWOOodunA_BEhMizRU72".
@@ -108,6 +105,10 @@ sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=Fal
 # Install Pillow version 10.2.0
 echo "📦 Installing Pillow==10.2.0..."
 pip install pillow==10.2.0
+
+cd /workspace
+
+gdown --folder "https://drive.google.com/drive/folders/1Y7rz5fo5DKI6UdQj9FruIVOROgIlpi7X?usp=drive_link"
 
 conda deactivate
 
