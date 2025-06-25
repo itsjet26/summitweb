@@ -95,6 +95,8 @@ cd /workspace
 # Activate the facefusion environment again
 conda activate facefusion
 
+pip install gdown
+
 # Download the files from the specified Google Drive folder.
 # Replace <FOLDER_ID> with the folder id extracted from the URL.
 # The folder id here is "19mSqb4FklllysWOOodunA_BEhMizRU72".
