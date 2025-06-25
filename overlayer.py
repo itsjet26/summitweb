@@ -13,15 +13,7 @@ import zipfile
 import subprocess
 
 
-# --- GPU Detection & Core Video Processing Functions ---
-
-def is_nvidia_gpu_available():
-    """
-    Checks if nvidia-smi command is available, which is a reliable indicator
-    that an NVIDIA GPU and drivers are present.
-    """
-    return shutil.which('nvidia-smi') is not None
-
+# --- Core Video Processing Functions (Used for Previews) ---
 
 def remove_green_background_with_alpha(frame):
     """
@@ -206,8 +198,8 @@ def generate_all_previews(main_video_path, avatar_file_paths, progress=gr.Progre
     return video_params_list, preview_paths
 
 
-# --- Video Generation Function with Best Quality Presets ---
-def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, parallel_mode, progress=gr.Progress()):
+# --- REFACTORED Video Generation Function (All FFMPEG) ---
+def generate_videos(main_video_path, avatar_file_paths, video_params, parallel_mode, progress=gr.Progress()):
     if not main_video_path or not avatar_file_paths:
         gr.Warning("Upload both a main video and avatar videos.")
         return [], None, gr.update(visible=False)
@@ -227,24 +219,6 @@ def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, pa
     main_clip_info.release()
     if fps == 0:
         fps = 30
-
-    # Dynamically select encoder and BEST QUALITY settings based on GPU availability
-    if is_nvidia_gpu_available():
-        # Best quality settings for NVIDIA's NVENC encoder
-        encoding_settings = [
-            '-c:v', 'h264_nvenc',
-            '-preset', 'p7',  # p7 is the slowest/best quality preset for NVENC
-            '-rc', 'vbr',  # Use Variable Bitrate for rate control
-            '-cq', '19',  # Constant Quality level, lower is better (19 is excellent)
-            '-b:v', '0',  # Required for constant quality mode
-        ]
-    else:
-        # Best quality settings for the libx264 (CPU) encoder
-        encoding_settings = [
-            '-c:v', 'libx264',
-            '-preset', 'slow',  # 'slow' offers a great quality/time balance for archiving
-            '-crf', '18',  # Lower CRF is higher quality (18 is considered visually lossless)
-        ]
 
     for i, avatar_path_str in enumerate(progress.tqdm(avatar_file_paths, desc="Generating Videos")):
         try:
@@ -277,35 +251,25 @@ def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, pa
                 )
                 ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '[final_v]', '-map', '[final_a]'])
             else:
-                # Refactored filter graph for sequential mode for more robustness
                 filter_complex = (
-                    # Split the main video into two identical streams
-                    f"[0:v]split[main_for_bg][main_for_concat];"
-                    # Create the frozen background from the first stream
-                    f"[main_for_bg]trim=end_frame=1,loop=-1:size=1,setpts=PTS-STARTPTS,fps={fps},crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[frozen_bg];"
-                    # Process the avatar video
+                    f"[0:v]trim=end_frame=1,loop=-1:size=1,setpts=PTS-STARTPTS,fps={fps},crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[frozen_bg];"
                     f"[1:v]format=yuv444p,{colorkey_setting},scale={scaled_avatar_w}:{scaled_avatar_h},setsar=1[avatar_processed];"
-                    # Overlay avatar on the frozen background
                     f"[frozen_bg][avatar_processed]overlay={x_pos}:{y_pos}:shortest=1[part1_v];"
-                    # Process the second main video stream for concatenation
-                    f"[main_for_concat]crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[part2_v];"
-                    # Concatenate the video and audio streams
+                    f"[0:v]crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[part2_v];"
                     f"[part1_v][1:a][part2_v][0:a]concat=n=2:v=1:a=1[final_v][final_a]"
                 )
                 ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '[final_v]', '-map', '[final_a]'])
 
-            # Apply the selected high-quality encoding settings
-            ffmpeg_command.extend(encoding_settings)
-            # Apply audio settings and output path
-            ffmpeg_command.extend(['-c:a', 'aac', '-b:a', '192k', '-y', str(output_path)])
+            ffmpeg_command.extend(
+                ['-c:v', 'libx264', '-preset', 'fast', '-crf', '18', '-c:a', 'aac', '-b:a', '192k', '-y',
+                 str(output_path)])
 
             subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
             generated_video_paths.append(str(output_path))
 
         except subprocess.CalledProcessError as e:
-            # Fixed the TypeError here by converting all args to strings before joining
             print("--- FFMPEG COMMAND FAILED ---")
-            print("Command:", ' '.join(map(str, e.args)))
+            print("Command:", ' '.join(e.args))
             print("Return Code:", e.returncode)
             print("--- FFMPEG STDERR ---")
             print(e.stderr if e.stderr else "N/A")
@@ -316,14 +280,13 @@ def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, pa
             print(traceback.format_exc())
             continue
 
-    # After generating all videos, create the zip file if any videos were created
+    # After generating all videos, create the zip file
     if not generated_video_paths:
         return [], None, gr.update(visible=False)
 
     progress(0.9, desc="Zipping files...")
-    # Create the zip in the same directory as the generated videos
-    zip_filename = f"generated_videos_{os.urandom(4).hex()}.zip"
-    zip_path = video_output_dir / zip_filename
+    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_zip:
+        zip_path = tmp_zip.name
 
     with zipfile.ZipFile(zip_path, 'w') as zf:
         for file_path_str in generated_video_paths:
@@ -331,7 +294,7 @@ def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, pa
             zf.write(file_path, arcname=file_path.name)
 
     # Return paths for the file list, the path for the zip file, and make the button visible
-    return generated_video_paths, str(zip_path), gr.update(visible=True)
+    return generated_video_paths, zip_path, gr.update(visible=True)
 
 
 def get_zip_path(zip_path_from_state):
@@ -344,14 +307,9 @@ def get_zip_path(zip_path_from_state):
 
 # --- Gradio UI Setup ---
 with gr.Blocks(title="Advanced Avatar Overlay App", theme=gr.themes.Soft()) as demo:
-    gpu_detected = is_nvidia_gpu_available()
-    gpu_status = "✅ NVIDIA GPU Detected: Using `h264_nvenc` for hardware acceleration." if gpu_detected else "⚠️ No NVIDIA GPU Detected: Falling back to CPU-based `libx264` encoder."
-
     gr.Markdown("# Advanced Avatar Overlay App (FFMPEG Powered)")
-    gr.Markdown(gpu_status)
-    gr.Markdown("---")
-    gr.Markdown("Create dynamic videos by overlaying a green-screen avatar onto a main video.")
-
+    gr.Markdown(
+        "Create dynamic videos by overlaying a green-screen avatar onto a main video. All video processing is handled by FFMPEG for maximum speed.")
     video_params_state = gr.State([])
     # State to hold the path of the final zip file
     zip_path_state = gr.State(None)
@@ -387,21 +345,18 @@ with gr.Blocks(title="Advanced Avatar Overlay App", theme=gr.themes.Soft()) as d
             generated_previews_gallery = gr.Gallery(label="Generated Previews", columns=6, object_fit="contain",
                                                     height="auto")
         with gr.TabItem("Final Videos"):
-            generated_videos_output = gr.File(label="Generated Videos (Click to Download)", file_count="multiple",
-                                              interactive=False)
-            # The Download All button is now re-instated
+            generated_videos_output = gr.File(label="Generated Videos", file_count="multiple", interactive=False)
             download_all_btn = gr.DownloadButton("Download All as ZIP", variant="primary", visible=False)
 
     preview_btn.click(fn=generate_all_previews, inputs=[main_video_input, avatar_file_input],
                       outputs=[video_params_state, generated_previews_gallery])
 
     generate_btn.click(
-        fn=generate_videos_and_zip,
+        fn=generate_videos,
         inputs=[main_video_input, avatar_file_input, video_params_state, parallel_mode_checkbox],
         outputs=[generated_videos_output, zip_path_state, download_all_btn]
     )
 
-    # This click event now triggers the instant download of the pre-made zip file
     download_all_btn.click(
         fn=get_zip_path,
         inputs=[zip_path_state],
