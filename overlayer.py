@@ -10,23 +10,41 @@ import re
 import shutil
 import traceback
 import zipfile
-import subprocess  # <-- FFMPEG is now used via subprocess
+import subprocess
 
 
-# --- Core Video Processing Functions (No changes here) ---
+# --- GPU Detection & Core Video Processing Functions ---
+
+def is_nvidia_gpu_available():
+    """
+    Checks if nvidia-smi command is available, which is a reliable indicator
+    that an NVIDIA GPU and drivers are present.
+    """
+    return shutil.which('nvidia-smi') is not None
+
 
 def remove_green_background_with_alpha(frame):
+    """
+    Removes green screen from a BGR frame and returns an RGBA image.
+    This is used only for generating the static PNG previews.
+    """
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     lower_green = np.array([35, 100, 100])
     upper_green = np.array([85, 255, 255])
     mask = cv2.inRange(hsv, lower_green, upper_green)
     alpha_channel = cv2.bitwise_not(mask)
     b, g, r = cv2.split(frame)
-    # Convert back to RGBA for compositing
-    return cv2.cvtColor(cv2.merge([b, g, r, alpha_channel]), cv2.COLOR_BGRA2RGBA)
+    # Merge B, G, R, and the new Alpha channel
+    bgra = cv2.merge([b, g, r, alpha_channel])
+    # Convert from BGRA to RGBA for proper display in RGB-based libraries
+    return cv2.cvtColor(bgra, cv2.COLOR_BGRA2RGBA)
 
 
 def overlay_alpha(background_rgb, foreground_rgba, x, y):
+    """
+    Overlays an RGBA (foreground) image onto an RGB (background) image.
+    This is used only for generating the static PNG previews.
+    """
     fg_h, fg_w, _ = foreground_rgba.shape
     bg_h, bg_w, _ = background_rgb.shape
 
@@ -52,7 +70,7 @@ def overlay_alpha(background_rgb, foreground_rgba, x, y):
     return background_rgb
 
 
-# --- File Download Functions (No changes here) ---
+# --- File Download Functions (Unchanged) ---
 
 def convert_gdrive_url_for_single_mode(gdrive_url):
     try:
@@ -127,7 +145,7 @@ def download_gdrive_folder(gdrive_url, progress=gr.Progress()):
         return None, gr.update(value=f"Error: {str(e)}", visible=True)
 
 
-# --- Preview Function (Unchanged) ---
+# --- Preview Generation Function (Unchanged) ---
 def generate_all_previews(main_video_path, avatar_file_paths, progress=gr.Progress()):
     if not main_video_path or not avatar_file_paths:
         gr.Warning("Upload both a main video and avatar videos for previews.")
@@ -185,17 +203,17 @@ def generate_all_previews(main_video_path, avatar_file_paths, progress=gr.Progre
         except Exception as e:
             print(traceback.format_exc())
             continue
-    return preview_paths, video_params_list
+    return video_params_list, preview_paths
 
 
-# --- REFACTORED Video Generation Function (OpenCV for Video + FFMPEG for Audio) ---
-def generate_videos(main_video_path, avatar_file_paths, video_params, parallel_mode, progress=gr.Progress()):
+# --- Video Generation Function with Best Quality Presets ---
+def generate_videos_and_zip(main_video_path, avatar_file_paths, video_params, parallel_mode, progress=gr.Progress()):
     if not main_video_path or not avatar_file_paths:
         gr.Warning("Upload both a main video and avatar videos.")
-        return [], gr.update(visible=False)
+        return [], None, gr.update(visible=False)
     if not video_params:
         gr.Warning("Please generate previews first to set the video layouts.")
-        return [], gr.update(visible=False)
+        return [], None, gr.update(visible=False)
 
     generated_video_paths = []
     script_dir = Path(__file__).parent
@@ -203,182 +221,193 @@ def generate_videos(main_video_path, avatar_file_paths, video_params, parallel_m
     video_output_dir.mkdir(parents=True, exist_ok=True)
 
     main_clip_info = cv2.VideoCapture(str(main_video_path))
-    fps = main_clip_info.get(cv2.CAP_PROP_FPS)
     main_width = int(main_clip_info.get(cv2.CAP_PROP_FRAME_WIDTH))
     main_height = int(main_clip_info.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = main_clip_info.get(cv2.CAP_PROP_FPS)
     main_clip_info.release()
+    if fps == 0:
+        fps = 30
+
+    # Dynamically select encoder and BEST QUALITY settings based on GPU availability
+    if is_nvidia_gpu_available():
+        # Best quality settings for NVIDIA's NVENC encoder
+        encoding_settings = [
+            '-c:v', 'h264_nvenc',
+            '-preset', 'p7',  # p7 is the slowest/best quality preset for NVENC
+            '-rc', 'vbr',  # Use Variable Bitrate for rate control
+            '-cq', '19',  # Constant Quality level, lower is better (19 is excellent)
+            '-b:v', '0',  # Required for constant quality mode
+        ]
+    else:
+        # Best quality settings for the libx264 (CPU) encoder
+        encoding_settings = [
+            '-c:v', 'libx264',
+            '-preset', 'slow',  # 'slow' offers a great quality/time balance for archiving
+            '-crf', '18',  # Lower CRF is higher quality (18 is considered visually lossless)
+        ]
 
     for i, avatar_path_str in enumerate(progress.tqdm(avatar_file_paths, desc="Generating Videos")):
-        temp_silent_video_path = None
         try:
-            # --- 1. Load parameters and create list for visual frames ---
             params = video_params[i]
-            x_pos, y_pos = params['x_pos'], params['y_pos']
+            avatar_path = Path(avatar_path_str)
+            output_filename = f"final_{'parallel' if parallel_mode else 'sequential'}_{avatar_path.stem}.mp4"
+            output_path = video_output_dir / output_filename
+
             crop_x, crop_y = params['crop_x'], params['crop_y']
             zoom_factor = params['zoom_factor']
             cropped_width = int(main_width / zoom_factor)
             cropped_height = int(main_height / zoom_factor)
             scaled_avatar_w, scaled_avatar_h = params['scaled_avatar_w'], params['scaled_avatar_h']
-
-            # --- 2. Generate Visuals with OpenCV ---
-            main_cap = cv2.VideoCapture(str(main_video_path))
-            avatar_cap = cv2.VideoCapture(str(avatar_path_str))
-
-            # This list will hold the final RGB frames for this specific video
-            processed_frames_for_this_video = []
-
-            if parallel_mode:
-                while True:
-                    ret_main, main_frame_bgr = main_cap.read()
-                    ret_avatar, avatar_frame_bgr = avatar_cap.read()
-                    if not ret_main: break
-                    if not ret_avatar:
-                        avatar_cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                        ret_avatar, avatar_frame_bgr = avatar_cap.read()
-                        if not ret_avatar: break
-                    main_processed_bgr = cv2.resize(
-                        main_frame_bgr[crop_y:crop_y + cropped_height, crop_x:crop_x + cropped_width],
-                        (main_width, main_height))
-                    avatar_resized_bgr = cv2.resize(avatar_frame_bgr, (scaled_avatar_w, scaled_avatar_h))
-                    avatar_rgba = remove_green_background_with_alpha(avatar_resized_bgr)
-                    main_processed_rgb = cv2.cvtColor(main_processed_bgr, cv2.COLOR_BGR2RGB)
-                    composite_frame = overlay_alpha(main_processed_rgb.copy(), avatar_rgba, x_pos, y_pos)
-                    processed_frames_for_this_video.append(composite_frame)
-            else:  # Sequential Mode
-                ret_first, first_main_frame_bgr = main_cap.read()
-                if ret_first:
-                    frozen_main_bgr = cv2.resize(
-                        first_main_frame_bgr[crop_y:crop_y + cropped_height, crop_x:crop_x + cropped_width],
-                        (main_width, main_height))
-                    frozen_main_rgb = cv2.cvtColor(frozen_main_bgr, cv2.COLOR_BGR2RGB)
-                    while True:
-                        ret_avatar, avatar_frame_bgr = avatar_cap.read()
-                        if not ret_avatar: break
-                        avatar_resized_bgr = cv2.resize(avatar_frame_bgr, (scaled_avatar_w, scaled_avatar_h))
-                        avatar_rgba = remove_green_background_with_alpha(avatar_resized_bgr)
-                        composite_frame = overlay_alpha(frozen_main_rgb.copy(), avatar_rgba, x_pos, y_pos)
-                        processed_frames_for_this_video.append(composite_frame)
-                main_cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
-                while True:
-                    ret_main, main_frame_bgr = main_cap.read()
-                    if not ret_main: break
-                    main_processed_bgr = cv2.resize(
-                        main_frame_bgr[crop_y:crop_y + cropped_height, crop_x:crop_x + cropped_width],
-                        (main_width, main_height))
-                    processed_frames_for_this_video.append(cv2.cvtColor(main_processed_bgr, cv2.COLOR_BGR2RGB))
-
-            main_cap.release()
-            avatar_cap.release()
-
-            if not processed_frames_for_this_video:
-                continue
-
-            # --- 3. Write silent video using OpenCV ---
-            with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-                temp_silent_video_path = tmp.name
-
-            fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-            out = cv2.VideoWriter(temp_silent_video_path, fourcc, fps, (main_width, main_height))
-            for frame_rgb in processed_frames_for_this_video:
-                # cv2.VideoWriter expects BGR frames, so we convert back from RGB
-                out.write(cv2.cvtColor(frame_rgb, cv2.COLOR_RGB2BGR))
-            out.release()
-
-            # --- 4. Add audio using FFMPEG ---
-            output_filename = f"final_{'parallel' if parallel_mode else 'sequential'}_{Path(avatar_path_str).stem}.mp4"
-            output_path = video_output_dir / output_filename
+            x_pos, y_pos = params['x_pos'], params['y_pos']
 
             ffmpeg_command = [
                 'ffmpeg', '-hide_banner', '-loglevel', 'error',
-                '-i', temp_silent_video_path,  # Input 0: Silent video
-                '-i', main_video_path,  # Input 1: Main video (for audio)
-                '-i', avatar_path_str,  # Input 2: Avatar video (for audio)
+                '-i', str(main_video_path),
+                '-i', str(avatar_path),
             ]
 
+            colorkey_setting = "colorkey=0x00FF00:0.4:0.1"
+
             if parallel_mode:
-                # Mix audio from main (input 1) and avatar (input 2)
-                filter_complex = "[1:a][2:a]amix=inputs=2:duration=first[a]"
-                ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '0:v', '-map', '[a]'])
-            else:  # Sequential Mode
-                # Concatenate audio from avatar (input 2) then main (input 1)
-                filter_complex = "[2:a][1:a]concat=n=2:v=0:a=1[a]"
-                ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '0:v', '-map', '[a]'])
+                filter_complex = (
+                    f"[0:v]crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[main_processed];"
+                    f"[1:v]format=yuv444p,{colorkey_setting},scale={scaled_avatar_w}:{scaled_avatar_h},setsar=1[avatar_processed];"
+                    f"[main_processed][avatar_processed]overlay={x_pos}:{y_pos}[final_v];"
+                    f"[0:a][1:a]amix=inputs=2:duration=first[final_a]"
+                )
+                ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '[final_v]', '-map', '[final_a]'])
+            else:
+                # Refactored filter graph for sequential mode for more robustness
+                filter_complex = (
+                    # Split the main video into two identical streams
+                    f"[0:v]split[main_for_bg][main_for_concat];"
+                    # Create the frozen background from the first stream
+                    f"[main_for_bg]trim=end_frame=1,loop=-1:size=1,setpts=PTS-STARTPTS,fps={fps},crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[frozen_bg];"
+                    # Process the avatar video
+                    f"[1:v]format=yuv444p,{colorkey_setting},scale={scaled_avatar_w}:{scaled_avatar_h},setsar=1[avatar_processed];"
+                    # Overlay avatar on the frozen background
+                    f"[frozen_bg][avatar_processed]overlay={x_pos}:{y_pos}:shortest=1[part1_v];"
+                    # Process the second main video stream for concatenation
+                    f"[main_for_concat]crop={cropped_width}:{cropped_height}:{crop_x}:{crop_y},scale={main_width}:{main_height},setsar=1[part2_v];"
+                    # Concatenate the video and audio streams
+                    f"[part1_v][1:a][part2_v][0:a]concat=n=2:v=1:a=1[final_v][final_a]"
+                )
+                ffmpeg_command.extend(['-filter_complex', filter_complex, '-map', '[final_v]', '-map', '[final_a]'])
 
-            # Use -c:v copy to avoid re-encoding the video stream, which is very fast.
-            # -shortest ensures the output terminates with the video stream.
-            ffmpeg_command.extend(['-c:v', 'copy', '-c:a', 'aac', '-shortest', '-y', str(output_path)])
+            # Apply the selected high-quality encoding settings
+            ffmpeg_command.extend(encoding_settings)
+            # Apply audio settings and output path
+            ffmpeg_command.extend(['-c:a', 'aac', '-b:a', '192k', '-y', str(output_path)])
 
-            subprocess.run(ffmpeg_command, check=True)
+            subprocess.run(ffmpeg_command, check=True, capture_output=True, text=True)
             generated_video_paths.append(str(output_path))
 
+        except subprocess.CalledProcessError as e:
+            # Fixed the TypeError here by converting all args to strings before joining
+            print("--- FFMPEG COMMAND FAILED ---")
+            print("Command:", ' '.join(map(str, e.args)))
+            print("Return Code:", e.returncode)
+            print("--- FFMPEG STDERR ---")
+            print(e.stderr if e.stderr else "N/A")
+            print("-----------------------------")
+            continue
         except Exception as e:
+            print(f"An unexpected error occurred while processing {avatar_path_str}:")
             print(traceback.format_exc())
             continue
-        finally:
-            # --- 5. Clean up temporary silent file ---
-            if temp_silent_video_path and os.path.exists(temp_silent_video_path):
-                os.remove(temp_silent_video_path)
 
-    return generated_video_paths, gr.update(visible=True)
+    # After generating all videos, create the zip file if any videos were created
+    if not generated_video_paths:
+        return [], None, gr.update(visible=False)
 
+    progress(0.9, desc="Zipping files...")
+    # Create the zip in the same directory as the generated videos
+    zip_filename = f"generated_videos_{os.urandom(4).hex()}.zip"
+    zip_path = video_output_dir / zip_filename
 
-# --- "Download All" Function ---
-def zip_videos(file_list):
-    if not file_list:
-        gr.Warning("No videos have been generated to download!")
-        return None
-    with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_zip:
-        zip_path = tmp_zip.name
     with zipfile.ZipFile(zip_path, 'w') as zf:
-        for file_data in file_list:
-            file_path = Path(file_data.path)
+        for file_path_str in generated_video_paths:
+            file_path = Path(file_path_str)
             zf.write(file_path, arcname=file_path.name)
-    return zip_path
+
+    # Return paths for the file list, the path for the zip file, and make the button visible
+    return generated_video_paths, str(zip_path), gr.update(visible=True)
+
+
+def get_zip_path(zip_path_from_state):
+    """
+    A simple function to retrieve the zip path from the state and provide it to the download button.
+    This makes the download action feel instantaneous to the user.
+    """
+    return zip_path_from_state
 
 
 # --- Gradio UI Setup ---
 with gr.Blocks(title="Advanced Avatar Overlay App", theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# Advanced Avatar Overlay App (OpenCV + FFMPEG)")
-    gr.Markdown(
-        "This version uses OpenCV for frame-by-frame video processing and FFMPEG for fast audio mixing and final video creation.")
+    gpu_detected = is_nvidia_gpu_available()
+    gpu_status = "✅ NVIDIA GPU Detected: Using `h264_nvenc` for hardware acceleration." if gpu_detected else "⚠️ No NVIDIA GPU Detected: Falling back to CPU-based `libx264` encoder."
+
+    gr.Markdown("# Advanced Avatar Overlay App (FFMPEG Powered)")
+    gr.Markdown(gpu_status)
+    gr.Markdown("---")
+    gr.Markdown("Create dynamic videos by overlaying a green-screen avatar onto a main video.")
+
     video_params_state = gr.State([])
+    # State to hold the path of the final zip file
+    zip_path_state = gr.State(None)
+
     with gr.Row():
         with gr.Column(scale=1):
-            main_video_input = gr.Video(label="1. Upload Main Video")
+            gr.Markdown("### 1. Upload Main Video")
+            main_video_input = gr.Video(label="Upload Main Video")
             gdrive_url_main = gr.Textbox(label="Or, Google Drive URL for Main Video",
                                          placeholder="Enter Google Drive File URL", lines=1)
             gdrive_main_btn = gr.Button("Download Main Video from URL")
             main_video_status = gr.Textbox(label="Download Status", interactive=False, visible=False)
         with gr.Column(scale=1):
-            avatar_file_input = gr.File(label="2. Upload Avatar Videos", file_count="multiple", file_types=["video"],
-                                        type="filepath")
+            gr.Markdown("### 2. Upload Avatar Videos")
+            avatar_file_input = gr.File(label="Upload Green Screen Avatar Videos", file_count="multiple",
+                                        file_types=["video"], type="filepath")
             gdrive_url_avatar = gr.Textbox(label="Or, Google Drive URL for Avatars",
                                            placeholder="Enter Google Drive Folder URL", lines=1)
             gdrive_avatar_btn = gr.Button("Download Avatars from Folder URL")
             avatar_folder_status = gr.Textbox(label="Download Status", interactive=False, visible=False)
-    with gr.Row(equal_height=True):
+    with gr.Row():
         with gr.Column(scale=2):
             gr.Markdown("### 3. Generate Previews & Videos")
-            preview_btn = gr.Button("Generate Previews", variant="secondary")
+            preview_btn = gr.Button("A) Generate Randomized Previews", variant="secondary")
+            gr.Markdown("First, generate previews to lock-in a random layout for each video.")
             parallel_mode_checkbox = gr.Checkbox(label="Parallel Mode (Avatar and main video play at the same time)",
                                                  value=True)
-            generate_btn = gr.Button("Generate Final Videos", variant="primary")
+            generate_btn = gr.Button("B) Generate Final Videos & ZIP", variant="primary")
+            gr.Markdown("Second, generate the final high-quality videos and prepare the ZIP file for download.")
 
     with gr.Tabs():
         with gr.TabItem("Previews"):
             generated_previews_gallery = gr.Gallery(label="Generated Previews", columns=6, object_fit="contain",
                                                     height="auto")
         with gr.TabItem("Final Videos"):
-            generated_videos_output = gr.Gallery(label="Generated Videos", columns=4, object_fit="contain",
-                                                 height="auto", allow_preview=True)
+            generated_videos_output = gr.File(label="Generated Videos (Click to Download)", file_count="multiple",
+                                              interactive=False)
+            # The Download All button is now re-instated
             download_all_btn = gr.DownloadButton("Download All as ZIP", variant="primary", visible=False)
 
     preview_btn.click(fn=generate_all_previews, inputs=[main_video_input, avatar_file_input],
-                      outputs=[generated_previews_gallery, video_params_state])
-    generate_btn.click(fn=generate_videos,
-                       inputs=[main_video_input, avatar_file_input, video_params_state, parallel_mode_checkbox],
-                       outputs=[generated_videos_output, download_all_btn])
-    download_all_btn.click(fn=zip_videos, inputs=[generated_videos_output], outputs=download_all_btn)
+                      outputs=[video_params_state, generated_previews_gallery])
+
+    generate_btn.click(
+        fn=generate_videos_and_zip,
+        inputs=[main_video_input, avatar_file_input, video_params_state, parallel_mode_checkbox],
+        outputs=[generated_videos_output, zip_path_state, download_all_btn]
+    )
+
+    # This click event now triggers the instant download of the pre-made zip file
+    download_all_btn.click(
+        fn=get_zip_path,
+        inputs=[zip_path_state],
+        outputs=download_all_btn
+    )
+
     gdrive_main_btn.click(fn=download_gdrive_file_for_single_mode, inputs=[gdrive_url_main],
                           outputs=[main_video_input, main_video_status])
     gdrive_avatar_btn.click(fn=download_gdrive_folder, inputs=[gdrive_url_avatar],
@@ -389,5 +418,6 @@ if __name__ == "__main__":
     for folder in ["generated_videos", "generated_previews", "downloaded_avatar_folders", "downloaded_files"]:
         dir_to_clean = script_dir / folder
         if dir_to_clean.exists():
+            print(f"Cleaning up old directory: {dir_to_clean}")
             shutil.rmtree(dir_to_clean)
     demo.launch(server_name="0.0.0.0", server_port=7864)
