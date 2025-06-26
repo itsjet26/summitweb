@@ -39,10 +39,15 @@ cd /workspace/LatentSync
 nohup python -u gradio_app.py > /workspace/latentsync.log 2>&1 & disown
 echo "✅ LatentSync started."
 
-echo "🚀 Overlayer Explorer..."
+echo "🚀 Starting Overlayer..."
 cd /workspace/overlayer
 nohup python -u app.py > /workspace/overlayer.log 2>&1 & disown
 echo "✅ Overlayer started."
+
+echo "🚀 Starting Remixer..."
+cd /workspace/Remixer
+nohup python -u app.py > /workspace/remixer.log 2>&1 & disown
+echo "✅ Remixer started."
 conda deactivate
 
 echo "✅ FaceFusion, VidGen, and LatentSync are running successfully!"
