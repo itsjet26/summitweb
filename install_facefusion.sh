@@ -74,7 +74,8 @@ conda install -y -c conda-forge ffmpeg
 pip install -r requirements.txt
 
 pip install gdown
-pip install flask
+pip install flask --upgrade google-api-python-client google-auth-httplib2 google-auth-oauthlib
+
 
 # OpenCV dependencies
 apt -y install libgl1
