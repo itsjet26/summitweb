@@ -117,6 +117,7 @@ cd /workspace
 
 gdown --folder "https://drive.google.com/drive/folders/1Y7rz5fo5DKI6UdQj9FruIVOROgIlpi7X?usp=drive_link"
 gdown --folder "https://drive.google.com/drive/folders/1E9WazK7GsMivJhQhiokQGpfNp7xVi1gN?usp=drive_link"
+gdown --folder "https://drive.google.com/drive/folders/1J9iXTjER0NsB-e9RaGRjOrn3ayO264t8?usp=drive_link"
 
 conda deactivate
 
