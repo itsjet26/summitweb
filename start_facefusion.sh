@@ -48,6 +48,11 @@ echo "🚀 Starting Remixer..."
 cd /workspace/Remixer
 nohup python -u app.py > /workspace/remixer.log 2>&1 & disown
 echo "✅ Remixer started."
+
+echo "🚀 Starting Test..."
+cd /workspace/ters
+nohup python -u app.py > /workspace/ters.log 2>&1 & disown
+echo "✅ Test started."
 conda deactivate
 
 echo "✅ FaceFusion, VidGen, and LatentSync are running successfully!"
