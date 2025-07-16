@@ -24,6 +24,10 @@ source $HOME/miniconda/etc/profile.d/conda.sh
 conda init
 source ~/.bashrc
 
+# Accept Anaconda Terms of Service for required channels
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main
+conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
 echo "🛠️ Setting up Conda environments..."
 
 cd /workspace
