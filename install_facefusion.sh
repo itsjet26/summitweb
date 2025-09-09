@@ -74,17 +74,11 @@ echo "✅ LatentSync Setup Complete!"
 # Additional Steps: Download GDrive files and install Pillow
 #############################################
 
-# Change directory to /workspace to prepare for the next steps
 cd /workspace
 
-# Activate the facefusion environment again
-conda activate facefusion
-
-pip install gdown
-
-# Download the files from the specified Google Drive folder.
-# Replace <FOLDER_ID> with the folder id extracted from the URL.
-# The folder id here is "19mSqb4FklllysWOOodunA_BEhMizRU72".
+gdown --folder "https://drive.google.com/drive/folders/1Y7rz5fo5DKI6UdQj9FruIVOROgIlpi7X?usp=drive_link"
+gdown --folder "https://drive.google.com/drive/folders/1E9WazK7GsMivJhQhiokQGpfNp7xVi1gN?usp=drive_link"
+gdown --folder "https://drive.google.com/drive/folders/1J9iXTjER0NsB-e9RaGRjOrn3ayO264t8?usp=drive_link"
 echo "📥 Downloading additional files from Google Drive..."
 gdown --folder "https://drive.google.com/drive/folders/19mSqb4FklllysWOOodunA_BEhMizRU72?usp=drive_link"
 sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=False, server_port=7862, inbrowser=True)/" vidgen/generator.py
@@ -92,12 +86,6 @@ sed -i "s/demo.launch(share=True)/demo.launch(server_name=\"0.0.0.0\", share=Fal
 # Install Pillow version 10.2.0
 echo "📦 Installing Pillow==10.2.0..."
 pip install pillow==10.2.0
-
-cd /workspace
-
-gdown --folder "https://drive.google.com/drive/folders/1Y7rz5fo5DKI6UdQj9FruIVOROgIlpi7X?usp=drive_link"
-gdown --folder "https://drive.google.com/drive/folders/1E9WazK7GsMivJhQhiokQGpfNp7xVi1gN?usp=drive_link"
-gdown --folder "https://drive.google.com/drive/folders/1J9iXTjER0NsB-e9RaGRjOrn3ayO264t8?usp=drive_link"
 
 conda deactivate
 
