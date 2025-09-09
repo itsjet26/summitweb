@@ -3,15 +3,6 @@
 # Ensure Conda is initialized
 source ~/miniconda/etc/profile.d/conda.sh
 
-#############################################
-# Start FaceFusion
-#############################################
-echo "🚀 Starting FaceFusion..."
-conda activate facefusion
-cd /workspace/facefusion
-nohup python -u facefusion.py run > /workspace/facefusion.log 2>&1 & disown
-echo "✅ FaceFusion started."
-conda deactivate
 
 #############################################
 # Start VidGen
@@ -56,3 +47,4 @@ echo "✅ Test started."
 conda deactivate
 
 echo "✅ FaceFusion, VidGen, and LatentSync are running successfully!"
+
