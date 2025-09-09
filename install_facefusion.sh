@@ -30,26 +30,6 @@ conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
 
 echo "🛠️ Setting up Conda environments..."
 
-cd /workspace
-
-echo "🐍 Creating Conda environment for FaceFusion..."
-conda create --name facefusion python=3.12 -y
-conda activate facefusion
-conda install -n facefusion conda-forge::cuda-runtime=12.6.3 conda-forge::cudnn=9.3.0.75 -y
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
-
-echo "🔨 Cloning FaceFusion repository..."
-git clone https://github.com/facefusion/facefusion.git
-cd facefusion
-pip install --upgrade pip
-pip install -r requirements.txt
-pip install onnxruntime-gpu
-python install.py --onnxruntime cuda
-sed -i "s/ui.launch(favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/ui.launch(server_name=\"0.0.0.0\", share=False, server_port=7860, favicon_path = 'facefusion.ico', inbrowser = state_manager.get_item('open_browser'))/" facefusion/uis/layouts/default.py
-conda deactivate
-
-echo "✅ FaceFusion Installation Complete!"
-
 #############################################
 # Additional Steps for LatentSync
 #############################################
